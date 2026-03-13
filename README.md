@@ -53,7 +53,7 @@ SciTeX Tunnel creates **persistent reverse SSH tunnels** using autossh and syste
 
 ## How It Works
 
-1. **`setup`** writes a systemd unit file at `/etc/systemd/system/autossh-tunnel-{port}.service` that runs autossh with the reverse tunnel flag (`-R {port}:localhost:22`). The service is enabled (starts on boot) and started immediately.
+1. **`setup`** (requires **sudo**) writes a systemd unit file at `/etc/systemd/system/autossh-tunnel-{port}.service` that runs autossh with the reverse tunnel flag (`-R {port}:localhost:22`). The service is enabled (starts on boot) and started immediately.
 2. **autossh** monitors the SSH connection and automatically re-establishes it if the connection drops — network interruptions, server reboots, or SSH timeouts are handled transparently.
 3. **systemd** ensures the service survives host reboots (`WantedBy=multi-user.target`) and restarts on process failure (`Restart=always`, `RestartSec=3`).
 4. A remote client connects to the bastion server on the forwarded port, and the connection is routed back through the tunnel to the lab workstation's SSH server (port 22).
@@ -75,6 +75,30 @@ pip install scitex-tunnel
 ```
 
 > **SciTeX users**: `pip install scitex` already includes tunnel support.
+
+> **Note**: `setup` and `remove` require **sudo** privileges because they write systemd service files to `/etc/systemd/system/` and run `systemctl` commands. You will be prompted for your password.
+
+<details>
+<summary><strong>Alternative: Direct shell scripts (no Python required)</strong></summary>
+
+<br>
+
+If you prefer not to install the Python package, you can use the shell scripts directly. Add to your `~/.bashrc`:
+
+```bash
+# Download the scripts (one-time)
+curl -o ~/.local/bin/setup-autossh-service.sh \
+  https://raw.githubusercontent.com/ywatanabe1989/scitex-tunnel/main/src/scitex_tunnel/scripts/setup-autossh-service.sh
+curl -o ~/.local/bin/remove-autossh-service.sh \
+  https://raw.githubusercontent.com/ywatanabe1989/scitex-tunnel/main/src/scitex_tunnel/scripts/remove-autossh-service.sh
+chmod +x ~/.local/bin/setup-autossh-service.sh ~/.local/bin/remove-autossh-service.sh
+
+# Usage
+setup-autossh-service.sh -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
+remove-autossh-service.sh -p 2222
+```
+
+</details>
 
 ## Quick Start
 

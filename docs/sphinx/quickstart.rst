@@ -10,6 +10,12 @@ Setup a Tunnel
 
 This creates a systemd service that maintains a persistent reverse SSH (Secure Shell) tunnel.
 
+.. note::
+
+   ``setup`` and ``remove`` require **sudo** privileges because they write
+   systemd service files to ``/etc/systemd/system/`` and run ``systemctl``.
+   You will be prompted for your password.
+
 Check Status
 ------------
 

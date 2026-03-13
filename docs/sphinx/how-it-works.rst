@@ -178,3 +178,24 @@ Prerequisites
   machines other than the bastion itself.
 - **sudo access**: Required on the lab workstation to write systemd unit files
   in ``/etc/systemd/system/`` and run ``systemctl``.
+
+Alternative: Direct Shell Scripts
+---------------------------------
+
+If you prefer not to install the Python package, you can use the underlying shell
+scripts directly. This is useful on minimal systems or when Python is not available.
+
+.. code-block:: bash
+
+    # Download the scripts (one-time)
+    curl -o ~/.local/bin/setup-autossh-service.sh \
+      https://raw.githubusercontent.com/ywatanabe1989/scitex-tunnel/main/src/scitex_tunnel/scripts/setup-autossh-service.sh
+    curl -o ~/.local/bin/remove-autossh-service.sh \
+      https://raw.githubusercontent.com/ywatanabe1989/scitex-tunnel/main/src/scitex_tunnel/scripts/remove-autossh-service.sh
+    chmod +x ~/.local/bin/setup-autossh-service.sh ~/.local/bin/remove-autossh-service.sh
+
+    # Usage (requires sudo for systemd operations)
+    setup-autossh-service.sh -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
+    remove-autossh-service.sh -p 2222
+
+You can also add these to your ``~/.bashrc`` or ``~/.bash_aliases`` for convenience.
