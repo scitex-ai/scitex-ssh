@@ -1,0 +1,25 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#e8f4fd', 'primaryBorderColor': '#2980b9', 'lineColor': '#2c3e50', 'textColor': '#2c3e50', 'fontSize': '14px'}}}%%
+
+graph LR
+    subgraph NAT["Behind NAT / Firewall"]
+        LAB["🖥️ Lab Workstation<br/><i>localhost:22</i>"]
+        SYSTEMD["⚙️ systemd service<br/><code>autossh-tunnel-PORT.service</code>"]
+        AUTOSSH["🔄 autossh<br/><i>auto-reconnect daemon</i>"]
+    end
+
+    subgraph PUBLIC["Public Network"]
+        BASTION["🌐 Bastion Server<br/><i>public IP</i><br/><code>PORT → localhost:22</code>"]
+    end
+
+    subgraph REMOTE["Remote Location"]
+        CLIENT["💻 Remote Client<br/><i>researcher laptop</i>"]
+    end
+
+    SYSTEMD -->|"manages<br/>(start/stop/restart)"| AUTOSSH
+    AUTOSSH -->|"monitors & maintains"| LAB
+    LAB -- "reverse tunnel<br/><code>-R PORT:localhost:22</code>" --> BASTION
+    CLIENT -- "ssh -p PORT<br/>bastion-server" --> BASTION
+
+    style NAT fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    style PUBLIC fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    style REMOTE fill:#e3f2fd,stroke:#1565c0,stroke-width:2px

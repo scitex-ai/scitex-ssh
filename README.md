@@ -6,7 +6,7 @@
   </a>
 </p>
 
-<p align="center"><b>Persistent SSH reverse tunnel for NAT traversal</b></p>
+<p align="center"><b>Persistent SSH (Secure Shell) reverse tunnel for NAT (Network Address Translation) traversal</b></p>
 
 <p align="center">
   <a href="https://badge.fury.io/py/scitex-tunnel"><img src="https://badge.fury.io/py/scitex-tunnel.svg" alt="PyPI version"></a>
@@ -23,23 +23,48 @@
 
 ## Problem
 
-Machines behind NAT or institutional firewalls cannot receive incoming SSH connections. Researchers running long experiments on lab workstations, HPC nodes, or edge devices need reliable remote access without manual port forwarding or VPN setup. Existing solutions (ngrok, cloudflared) often require external accounts or lack systemd integration for persistent, auto-recovering connections.
+Machines behind NAT (Network Address Translation) or institutional firewalls cannot receive incoming SSH (Secure Shell) connections. Researchers running long experiments on lab workstations, HPC (High-Performance Computing) nodes, or edge devices need reliable remote access without manual port forwarding or VPN (Virtual Private Network) setup. Existing solutions (ngrok, cloudflared) often require external accounts or lack systemd integration for persistent, auto-recovering connections.
 
 ## Solution
 
 SciTeX Tunnel creates **persistent reverse SSH tunnels** using autossh and systemd. Each tunnel runs as a managed service that auto-restarts on failure, survives reboots, and requires only a bastion server with SSH access.
 
 ```
-Host (behind NAT) --[reverse tunnel]--> Bastion Server <--[SSH]--> Client
+┌─────────────────────────────────────────┐     ┌──────────────────────┐     ┌──────────────────┐
+│  Lab Workstation (behind NAT/firewall)  │     │   Bastion Server     │     │  Remote Client   │
+│                                         │     │   (public IP)        │     │  (laptop, etc.)  │
+│  ┌──────────────────────────────────┐   │     │                      │     │                  │
+│  │ systemd service                  │   │     │                      │     │                  │
+│  │ autossh-tunnel-{port}.service    │   │     │                      │     │                  │
+│  │   ┌──────────────────────────┐   │   │     │  ┌────────────────┐  │     │                  │
+│  │   │ autossh                  │   │   │     │  │ sshd listening │  │     │                  │
+│  │   │ (auto-reconnect daemon)  │───┼───┼─────┼──│ on port {port} │──┼─────│  ssh -p {port}   │
+│  │   │                          │   │   │     │  │                │  │     │  bastion-server  │
+│  │   └──────────────────────────┘   │   │     │  └────────────────┘  │     │                  │
+│  └──────────────────────────────────┘   │     │                      │     │                  │
+│                                         │     │                      │     │                  │
+│  localhost:22 (SSH server)              │     │                      │     │                  │
+└─────────────────────────────────────────┘     └──────────────────────┘     └──────────────────┘
+          ────── reverse tunnel ──────►               ◄─── SSH connection ───
+     -R {port}:localhost:22 bastion-server         ssh -p {port} bastion-server
 ```
+
+<p align="center"><sub><b>Figure 1.</b> Architecture overview. The lab workstation initiates a reverse SSH tunnel to the bastion server. The remote client connects to the bastion server, which forwards the connection back through the tunnel to the lab workstation.</sub></p>
+
+## How It Works
+
+1. **`setup`** writes a systemd unit file at `/etc/systemd/system/autossh-tunnel-{port}.service` that runs autossh with the reverse tunnel flag (`-R {port}:localhost:22`). The service is enabled (starts on boot) and started immediately.
+2. **autossh** monitors the SSH connection and automatically re-establishes it if the connection drops — network interruptions, server reboots, or SSH timeouts are handled transparently.
+3. **systemd** ensures the service survives host reboots (`WantedBy=multi-user.target`) and restarts on process failure (`Restart=always`, `RestartSec=3`).
+4. A remote client connects to the bastion server on the forwarded port, and the connection is routed back through the tunnel to the lab workstation's SSH server (port 22).
 
 | Operation | What it does |
 |-----------|-------------|
-| **setup** | Creates a systemd service that maintains a reverse SSH tunnel via autossh |
-| **status** | Queries systemd for tunnel service state |
-| **remove** | Stops, disables, and deletes the systemd service |
+| **setup** | Creates a systemd service at `/etc/systemd/system/autossh-tunnel-{port}.service` that maintains a reverse SSH tunnel via autossh |
+| **status** | Queries systemd for tunnel service state (`systemctl status`) |
+| **remove** | Stops, disables, and deletes the systemd service file |
 
-<p align="center"><sub><b>Table 1.</b> Three operations. Each maps to a CLI command, Python function, and MCP tool.</sub></p>
+<p align="center"><sub><b>Table 1.</b> Three operations. Each maps to a CLI (Command-Line Interface) command, Python function, and MCP (Model Context Protocol) tool.</sub></p>
 
 ## Installation
 
@@ -67,7 +92,7 @@ scitex-tunnel remove -p 2222
 ## Three Interfaces
 
 <details>
-<summary><strong>Python API</strong></summary>
+<summary><strong>Python API (Application Programming Interface)</strong></summary>
 
 <br>
 
@@ -100,8 +125,8 @@ scitex-tunnel setup -p 2222 -b user@host -s ~/.ssh/id_rsa
 scitex-tunnel status                          # All tunnels
 scitex-tunnel status -p 2222                  # Specific port
 scitex-tunnel remove -p 2222                  # Remove tunnel
-scitex-tunnel list-python-apis                # List Python API
-scitex-tunnel mcp list-tools                  # List MCP tools
+scitex-tunnel list-python-apis                # List Python APIs
+scitex-tunnel mcp list-tools                  # List MCP (Model Context Protocol) tools
 ```
 
 > **[Full CLI reference](https://scitex-tunnel.readthedocs.io/)**
@@ -109,7 +134,7 @@ scitex-tunnel mcp list-tools                  # List MCP tools
 </details>
 
 <details>
-<summary><strong>MCP Server — for AI Agents</strong></summary>
+<summary><strong>MCP (Model Context Protocol) Server — for AI Agents</strong></summary>
 
 <br>
 
@@ -121,7 +146,7 @@ AI agents can manage tunnels autonomously.
 | `tunnel_status` | Check status of SSH reverse tunnels |
 | `tunnel_remove` | Remove a persistent SSH reverse tunnel |
 
-<sub><b>Table 2.</b> Three MCP tools. All tools accept JSON parameters and return JSON results.</sub>
+<sub><b>Table 2.</b> Three MCP tools. All tools accept JSON (JavaScript Object Notation) parameters and return JSON results.</sub>
 
 ```bash
 scitex-tunnel mcp start
@@ -136,7 +161,7 @@ scitex-tunnel mcp start
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `SCITEX_TUNNEL_BASTION_SERVER` | Default bastion server | `user@bastion.example.com` |
-| `SCITEX_TUNNEL_SECRET_KEY_PATH` | Default SSH private key path | `~/.ssh/id_rsa` |
+| `SCITEX_TUNNEL_SECRET_KEY_PATH` | Default SSH (Secure Shell) private key path | `~/.ssh/id_rsa` |
 | `SCITEX_TUNNEL_DEBUG_MODE` | Enable verbose output (`1`) | `0` |
 
 <p align="center"><sub><b>Table 3.</b> Environment variables. CLI flags take precedence when provided.</sub></p>
