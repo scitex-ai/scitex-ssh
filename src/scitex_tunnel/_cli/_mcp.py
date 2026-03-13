@@ -26,12 +26,66 @@ def start():
         raise SystemExit(1)
 
 
+@mcp.command()
+def doctor():
+    """Check MCP server dependencies and configuration."""
+    issues = []
+
+    try:
+        import fastmcp  # noqa: F401
+
+        click.secho("  fastmcp: installed", fg="green")
+    except ImportError:
+        click.secho("  fastmcp: NOT installed", fg="red")
+        issues.append("pip install scitex-tunnel[mcp]")
+
+    import shutil
+
+    if shutil.which("autossh"):
+        click.secho("  autossh: installed", fg="green")
+    else:
+        click.secho("  autossh: NOT installed", fg="red")
+        issues.append("sudo apt install autossh")
+
+    if issues:
+        click.echo()
+        click.echo("Fix with:")
+        for fix in issues:
+            click.echo(f"  {fix}")
+        raise SystemExit(1)
+    else:
+        click.secho("\nAll checks passed.", fg="green")
+
+
+@mcp.command()
+def installation():
+    """Show MCP server installation instructions."""
+    click.echo("Install scitex-tunnel with MCP support:")
+    click.echo()
+    click.echo("  pip install scitex-tunnel[mcp]")
+    click.echo()
+    click.echo("Add to your Claude Code MCP config:")
+    click.echo()
+    click.echo("  {")
+    click.echo('    "mcpServers": {')
+    click.echo('      "scitex-tunnel": {')
+    click.echo('        "command": "scitex-tunnel",')
+    click.echo('        "args": ["mcp", "start"]')
+    click.echo("      }")
+    click.echo("    }")
+    click.echo("  }")
+
+
 @mcp.command("list-tools")
 @click.option("-v", "--verbose", count=True, help="Verbosity (-v, -vv, -vvv).")
 def list_tools(verbose):
     """List available MCP tools."""
     tools = [
-        ("tunnel_setup", "Set up a persistent SSH reverse tunnel", "port, bastion_server, secret_key_path"),
+        (
+            "tunnel_setup",
+            "Set up a persistent SSH reverse tunnel",
+            "port, bastion_server, secret_key_path",
+        ),
         ("tunnel_status", "Check status of SSH reverse tunnels", "port (optional)"),
         ("tunnel_remove", "Remove a persistent SSH reverse tunnel", "port"),
     ]

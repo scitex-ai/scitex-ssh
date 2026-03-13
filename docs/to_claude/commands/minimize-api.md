@@ -107,6 +107,8 @@ scitex mcp list-tools -v -m audio
 3. **Apply hiding** (Python API):
    - Rename: `base.py` → `_base.py`
    - Import: `from .x import Y as _Y`
+   - **Use `mcp__scitex__dev_bulk_rename`** for file/directory renames — much faster, safer, and more reliable than manual `mv` + `sed` chains. It handles cross-reference updates automatically.
+   - **Never use `sed`/`awk` for file edits** — always use the Edit tool. It's safer, reviewable, and doesn't fail on path issues.
 
 4. **Ensure consistency** (MCP):
    - Module commands delegate to main
@@ -114,6 +116,7 @@ scitex mcp list-tools -v -m audio
 
 5. **Update references**:
    - Sibling modules, tests, docs
+   - The bulk renamer handles most of this automatically
 
 ---
 

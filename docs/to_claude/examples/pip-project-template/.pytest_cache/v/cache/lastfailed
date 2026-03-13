@@ -1,0 +1,5 @@
+{
+  "tests/pip_project_template/cli/test__GlobalArgumentParser.py::TestCentralargumentparser::test_get_command_parsers_exception_handling": true,
+  "tests/pip_project_template/core/test_core_init.py::TestInit::test_functional_implementation_placeholder": true,
+  "tests/pip_project_template/test_package_init.py::TestInit::test_functional_implementation_placeholder": true
+}

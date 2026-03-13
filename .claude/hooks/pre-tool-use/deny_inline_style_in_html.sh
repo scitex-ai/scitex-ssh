@@ -7,14 +7,46 @@
 # Blocks: <style>...</style> tags
 # Blocks: style="..." attributes
 
+# --self-test: verify hook works with sample input
+if [[ "${1:-}" == "--self-test" ]]; then
+    echo "=== Self-test: $(basename "$0") ==="
+    pass=0
+    fail=0
+
+    # Test 1: small file should pass (exit 0)
+    # shellcheck disable=SC2034
+    result=$(printf '%s' '{"tool_name":"Write","tool_input":{"file_path":"/tmp/test_hook.py","content":"print(1)\nprint(2)\n"},"cwd":"/tmp","session_id":"test","tool_use_id":"test-1"}' | "$0" 2>&1) && rc=$? || rc=$?
+    if [[ $rc -eq 0 ]]; then
+        ((pass++))
+        echo "  PASS: small file allowed (exit $rc)"
+    else
+        ((fail++))
+        echo "  FAIL: small file should pass (exit $rc)"
+    fi
+
+    # Test 2: inline style in HTML should block (exit 2)
+    # shellcheck disable=SC2034
+    result=$(printf '%s' '{"tool_name":"Write","tool_input":{"file_path":"/tmp/test.html","content":"<html><div style=\"color:red\">test</div></html>"},"cwd":"/tmp","session_id":"test","tool_use_id":"test-2"}' | "$0" 2>&1) && rc=$? || rc=$?
+    if [[ $rc -eq 2 ]]; then
+        ((pass++))
+        echo "  PASS: inline style blocked (exit $rc)"
+    else
+        ((fail++))
+        echo "  FAIL: inline style should block (exit $rc)"
+    fi
+
+    echo "Results: $pass passed, $fail failed"
+    [[ $fail -eq 0 ]] && exit 0 || exit 1
+fi
+
 set -euo pipefail
 
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_PATH="$THIS_DIR/.$(basename "$0").log"
-echo >"$LOG_PATH"
+echo >"$LOG_PATH" 2>/dev/null || true
 
 # Check if hook is enabled
-HELPER_SCRIPT="$(dirname "$THIS_DIR")/hook_switch_helper.sh"
+HELPER_SCRIPT="$(dirname "$THIS_DIR")/project-switch/hook_switch_helper.sh"
 if [[ -f "$HELPER_SCRIPT" ]]; then
     # shellcheck source=/dev/null
     source "$HELPER_SCRIPT"

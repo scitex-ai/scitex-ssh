@@ -17,7 +17,8 @@ Do not add signature unless explicitly requested.
 
 #### Backend
 ~~Use `elevenlabs` with `x1.2` speed~~ -> Cancelled Elevenlabs subscription
-Use `gtts` with `x1.5` speed
+~~Use `gtts` with `x1.5` speed~~
+Use `luxtts` with `x2.0` speed
 
 #### Repeat
 When asked to speak consectively, it means the user is working for other tasks. Please just keep repeating your feedback until user respond. But again, your autonomous work is highly recommended without user confirmation.

@@ -1,0 +1,4 @@
+{
+  "stage": "git -C /home/ywatanabe/proj/scitex-tunnel push origin develop",
+  "cwd": "/home/ywatanabe/proj/scitex-tunnel"
+}

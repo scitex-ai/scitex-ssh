@@ -3,12 +3,9 @@
 # Timestamp: "2026-01-04 19:33:24 (ywatanabe)"
 # File: ./.claude/hooks/pre-tool-use/inhibit_project_root_pollution.sh
 
-ORIG_DIR="$(pwd)"
-THIS_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
-LOG_PATH="$THIS_DIR/.$(basename $0).log"
-echo > "$LOG_PATH"
-
-GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_PATH="$THIS_DIR/.$(basename "$0").log"
+echo >"$LOG_PATH" 2>/dev/null || true
 
 GRAY='\033[0;90m'
 GREEN='\033[0;32m'
@@ -23,17 +20,33 @@ echo_error() { echo -e "${RED}ERRO: $1${NC}"; }
 echo_header() { echo_info "=== $1 ==="; }
 # ---------------------------------------
 
-echo >"$LOG_PATH"
-
 # Description: Prevents project root pollution by enforcing whitelist policy
+
+# --self-test: verify hook works with sample input
+if [[ "${1:-}" == "--self-test" ]]; then
+    echo "=== Self-test: $(basename "$0") ==="
+    pass=0
+    fail=0
+
+    # Test 1: small file should pass (exit 0)
+    # shellcheck disable=SC2034
+    result=$(printf '%s' '{"tool_name":"Write","tool_input":{"file_path":"/tmp/test_hook.py","content":"print(1)\nprint(2)\n"},"cwd":"/tmp","session_id":"test","tool_use_id":"test-1"}' | "$0" 2>&1) && rc=$? || rc=$?
+    if [[ $rc -eq 0 ]]; then
+        ((pass++))
+        echo "  PASS: small file allowed (exit $rc)"
+    else
+        ((fail++))
+        echo "  FAIL: small file should pass (exit $rc)"
+    fi
+
+    echo "Results: $pass passed, $fail failed"
+    [[ $fail -eq 0 ]] && exit 0 || exit 1
+fi
 
 set -euo pipefail
 
-THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# HOOKS_DIR="$(dirname "$THIS_DIR")"
-
 # Check if hook is enabled via centralized project-switch/switch.yaml
-HELPER_SCRIPT="$(dirname "$THIS_DIR")/hook_switch_helper.sh"
+HELPER_SCRIPT="$(dirname "$THIS_DIR")/project-switch/hook_switch_helper.sh"
 if [[ -f "$HELPER_SCRIPT" ]]; then
     # shellcheck source=/dev/null
     source "$HELPER_SCRIPT"
@@ -77,6 +90,9 @@ FILE_DIR="$(dirname "$ABS_PATH")"
 # Get basename for matching
 BASENAME="$(basename "$FILE_PATH")"
 
+# If no criteria file configured, allow all (no restrictions)
+[ -f "$CRITERIA_FILE" ] || exit 0
+
 # Load criteria and check whitelist
 python3 - "$CRITERIA_FILE" "$BASENAME" <<'PYTHON_SCRIPT'
 import sys
@@ -86,7 +102,11 @@ import os
 criteria_file = sys.argv[1]
 basename = sys.argv[2]
 
-# Default criteria if file doesn't exist
+# No criteria file = allow all
+if not os.path.exists(criteria_file):
+    sys.exit(0)
+
+# Default criteria
 whitelist = []
 whitelist_patterns = []
 relocations = {}

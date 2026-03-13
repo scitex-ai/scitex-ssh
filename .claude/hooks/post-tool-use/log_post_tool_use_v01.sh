@@ -3,12 +3,11 @@
 # Timestamp: "2026-01-09 16:50:10 (ywatanabe)"
 # File: ./.claude/hooks/post-tool-use/log_post_tool_use.sh
 
-ORIG_DIR="$(pwd)"
-THIS_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
-LOG_PATH="$THIS_DIR/.$(basename $0).log"
-echo > "$LOG_PATH"
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_PATH="$THIS_DIR/.$(basename "$0").log"
+echo >"$LOG_PATH" 2>/dev/null || true
 
-GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 
 GRAY='\033[0;90m'
 GREEN='\033[0;32m'
@@ -23,10 +22,33 @@ echo_error() { echo -e "${RED}ERRO: $1${NC}"; }
 echo_header() { echo_info "=== $1 ==="; }
 # ---------------------------------------
 
-THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LOG_PATH="$THIS_DIR/.$(basename "$0").log"
-echo >"$LOG_PATH"
+# --self-test: verify hook works with sample input
+if [[ "${1:-}" == "--self-test" ]]; then
+    echo "=== Self-test: $(basename "$0") ==="
+    pass=0
+    fail=0
 
+    # Test 1: should always pass (exit 0) - logging only
+    echo '{"tool_name":"Bash","tool_input":{"command":"echo test"},"tool_response":{"stdout":"hello","stderr":""},"cwd":"/tmp","session_id":"test","tool_use_id":"test-1"}' | "$0" >/dev/null 2>&1 && rc=$? || rc=$?
+    if [[ $rc -eq 0 ]]; then
+        ((pass++))
+        echo "  PASS: logging succeeded (exit $rc)"
+    else
+        ((fail++))
+        echo "  FAIL: logging failed (exit $rc)"
+    fi
+
+    echo "Results: $pass passed, $fail failed"
+    [[ $fail -eq 0 ]] && exit 0 || exit 1
+fi
+
+# Check if hook is enabled via centralized project-switch/switch.yaml
+HELPER_SCRIPT="$(dirname "$THIS_DIR")/project-switch/hook_switch_helper.sh"
+if [[ -f "$HELPER_SCRIPT" ]]; then
+    # shellcheck source=/dev/null
+    source "$HELPER_SCRIPT"
+    check_hook_enabled_or_exit "$(basename "$0")"
+fi
 
 # Description: Logs tool output (stdout/stderr) after execution
 
@@ -39,7 +61,7 @@ fi
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/claude-code.log"
 
-echo "$0" >> "$LOG_FILE"
+echo "$0" >>"$LOG_FILE"
 
 # Read input from stdin
 INPUT="$(cat)"

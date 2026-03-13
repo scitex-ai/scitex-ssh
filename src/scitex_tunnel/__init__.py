@@ -37,23 +37,49 @@ def _run_script(
     return subprocess.run(cmd, capture_output=True, text=True)
 
 
-def setup(port: int, bastion_server: str, secret_key_path: str) -> dict:
+def setup(
+    port: int,
+    bastion_server: str | None = None,
+    secret_key_path: str | None = None,
+) -> dict:
     """Set up a persistent SSH reverse tunnel.
 
     Parameters
     ----------
     port : int
         The remote port to forward (e.g. 2222).
-    bastion_server : str
+    bastion_server : str, optional
         The bastion/relay server hostname or IP.
-    secret_key_path : str
+        Falls back to SCITEX_TUNNEL_BASTION_SERVER env var.
+    secret_key_path : str, optional
         Path to the SSH private key for authentication.
+        Falls back to SCITEX_TUNNEL_SECRET_KEY_PATH env var.
 
     Returns
     -------
     dict
         Result with 'success', 'stdout', 'stderr' keys.
+
+    Raises
+    ------
+    ValueError
+        If bastion_server or secret_key_path is not provided and
+        the corresponding environment variable is not set.
     """
+    bastion_server = bastion_server or os.environ.get("SCITEX_TUNNEL_BASTION_SERVER")
+    secret_key_path = secret_key_path or os.environ.get("SCITEX_TUNNEL_SECRET_KEY_PATH")
+
+    if not bastion_server:
+        raise ValueError(
+            "bastion_server is required. Provide it as an argument or set "
+            "SCITEX_TUNNEL_BASTION_SERVER environment variable."
+        )
+    if not secret_key_path:
+        raise ValueError(
+            "secret_key_path is required. Provide it as an argument or set "
+            "SCITEX_TUNNEL_SECRET_KEY_PATH environment variable."
+        )
+
     result = _run_script(
         "setup-autossh-service.sh",
         ["-p", str(port), "-b", bastion_server, "-s", secret_key_path],

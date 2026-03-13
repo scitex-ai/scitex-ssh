@@ -12,17 +12,23 @@ def create_server():
     mcp = FastMCP("scitex-tunnel")
 
     @mcp.tool()
-    def tunnel_setup(port: int, bastion_server: str, secret_key_path: str) -> dict:
+    def tunnel_setup(
+        port: int,
+        bastion_server: str | None = None,
+        secret_key_path: str | None = None,
+    ) -> dict:
         """Set up a persistent SSH reverse tunnel.
 
         Parameters
         ----------
         port : int
             The remote port to forward (e.g. 2222).
-        bastion_server : str
+        bastion_server : str, optional
             The bastion/relay server (e.g. user@bastion.example.com).
-        secret_key_path : str
+            Falls back to SCITEX_TUNNEL_BASTION_SERVER env var.
+        secret_key_path : str, optional
             Path to the SSH private key.
+            Falls back to SCITEX_TUNNEL_SECRET_KEY_PATH env var.
 
         Returns
         -------

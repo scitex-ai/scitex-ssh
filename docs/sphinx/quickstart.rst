@@ -8,7 +8,13 @@ Setup a Tunnel
 
     scitex-tunnel setup -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
 
-This creates a systemd service that maintains a persistent reverse SSH tunnel.
+This creates a systemd service that maintains a persistent reverse SSH (Secure Shell) tunnel.
+
+.. note::
+
+   ``setup`` and ``remove`` require **sudo** privileges because they write
+   systemd service files to ``/etc/systemd/system/`` and run ``systemctl``.
+   You will be prompted for your password.
 
 Check Status
 ------------
@@ -25,8 +31,8 @@ Remove a Tunnel
 
     scitex-tunnel remove -p 2222
 
-Python API
-----------
+Python API (Application Programming Interface)
+-----------------------------------------------
 
 .. code-block:: python
 

@@ -4,11 +4,13 @@
 # File: .//home/ywatanabe/.claude/to_claude/hooks/check_local_rules.sh
 
 ORIG_DIR="$(pwd)"
-THIS_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
-LOG_PATH="$THIS_DIR/.$(basename $0).log"
-echo > "$LOG_PATH"
+export ORIG_DIR
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_PATH="$THIS_DIR/.$(basename "$0").log"
+echo >"$LOG_PATH" 2>/dev/null || true
 
 GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+export GIT_ROOT
 
 GRAY='\033[0;90m'
 GREEN='\033[0;32m'
@@ -22,6 +24,28 @@ echo_warning() { echo -e "${YELLOW}WARN: $1${NC}"; }
 echo_error() { echo -e "${RED}ERRO: $1${NC}"; }
 echo_header() { echo_info "=== $1 ==="; }
 # ---------------------------------------
+
+# --self-test: verify hook works with sample input
+if [[ "${1:-}" == "--self-test" ]]; then
+    echo "=== Self-test: $(basename "$0") ==="
+    pass=0
+    fail=0
+
+    # Test 1: should pass when run in a clean directory
+    _self_path="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+    (cd /tmp && echo '{"stop_reason":"user_request","cwd":"/tmp","session_id":"test"}' | "$_self_path" >/dev/null 2>&1) && rc=$? || rc=$?
+    if [[ $rc -eq 0 ]]; then
+        ((pass++))
+        echo "  PASS: clean directory check (exit $rc)"
+    else
+        ((fail++))
+        echo "  FAIL: clean dir should pass (exit $rc)"
+    fi
+
+    echo "Results: $pass passed, $fail failed"
+    [[ $fail -eq 0 ]] && exit 0 || exit 1
+fi
+
 #!/usr/bin/env bash
 # Description: Check local coding rules (Stop hook / final gate)
 #
@@ -36,13 +60,22 @@ echo_header() { echo_info "=== $1 ==="; }
 
 set -euo pipefail
 
+# Check if hook is enabled via centralized project-switch/switch.yaml
+HELPER_SCRIPT="$(dirname "$THIS_DIR")/project-switch/hook_switch_helper.sh"
+if [[ -f "$HELPER_SCRIPT" ]]; then
+    # shellcheck source=/dev/null
+    source "$HELPER_SCRIPT"
+    check_hook_enabled_or_exit "$(basename "$0")"
+fi
+
 # Configuration
 FORBIDDEN_TOKENS=("FIXME" "HACK") #  "XXX"
 # Note: TODO is allowed for tracking work, but FIXME/HACK are not
 
 # Find project root
 find_project_root() {
-    local dir="$(pwd)"
+    local dir
+    dir="$(pwd)"
     while [ "$dir" != "/" ]; do
         if [ -d "$dir/.git" ]; then
             echo "$dir"
@@ -50,7 +83,7 @@ find_project_root() {
         fi
         dir="$(dirname "$dir")"
     done
-    echo "$(pwd)"
+    pwd
 }
 
 PROJECT_ROOT=$(find_project_root)
@@ -89,22 +122,22 @@ for file in $CHANGED_FILES; do
     [ -f "$file" ] || continue
 
     case "$file" in
-        *.py)
-            # Check for pdb/ipdb/breakpoint
-            if grep -qnE '(import\s+i?pdb|\.set_trace\(\)|breakpoint\(\))' "$file" 2>/dev/null; then
-                echo "Debug statement found in: $file" >&2
-                grep -nE '(import\s+i?pdb|\.set_trace\(\)|breakpoint\(\))' "$file" >&2
-                VIOLATIONS=$((VIOLATIONS + 1))
-            fi
-            ;;
-        *.ts|*.tsx|*.js|*.jsx)
-            # Check for debugger statements
-            if grep -qn 'debugger;' "$file" 2>/dev/null; then
-                echo "Debugger statement found in: $file" >&2
-                grep -n 'debugger;' "$file" >&2
-                VIOLATIONS=$((VIOLATIONS + 1))
-            fi
-            ;;
+    *.py)
+        # Check for pdb/ipdb/breakpoint
+        if grep -qnE '(import\s+i?pdb|\.set_trace\(\)|breakpoint\(\))' "$file" 2>/dev/null; then
+            echo "Debug statement found in: $file" >&2
+            grep -nE '(import\s+i?pdb|\.set_trace\(\)|breakpoint\(\))' "$file" >&2
+            VIOLATIONS=$((VIOLATIONS + 1))
+        fi
+        ;;
+    *.ts | *.tsx | *.js | *.jsx)
+        # Check for debugger statements
+        if grep -qn 'debugger;' "$file" 2>/dev/null; then
+            echo "Debugger statement found in: $file" >&2
+            grep -n 'debugger;' "$file" >&2
+            VIOLATIONS=$((VIOLATIONS + 1))
+        fi
+        ;;
     esac
 done
 

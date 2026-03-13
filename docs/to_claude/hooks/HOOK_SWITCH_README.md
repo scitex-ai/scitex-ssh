@@ -51,7 +51,7 @@ Add this code near the top of your hook script:
 
 ```bash
 # Check if hook is enabled via centralized project-switch/switch.yaml
-HELPER_SCRIPT="$(dirname "$THIS_DIR")/hook_switch_helper.sh"
+HELPER_SCRIPT="$(dirname "$THIS_DIR")/project-switch/hook_switch_helper.sh"
 if [[ -f "$HELPER_SCRIPT" ]]; then
     # shellcheck source=/dev/null
     source "$HELPER_SCRIPT"
@@ -68,8 +68,8 @@ This pattern:
 
 ```
 .claude/hooks/
-├── hook_switch_helper.sh                           # Shared helper (synced)
 ├── project-switch/                                 # Centralized project settings
+│   ├── hook_switch_helper.sh                       # Shared helper (synced)
 │   ├── switch-example.yaml                         # Template (synced)
 │   ├── switch.yaml                                 # Your config (never synced)
 │   ├── project-root-pollution-criteria-example.yaml  # Template (synced)

@@ -6,9 +6,37 @@
 # Description: Logs all Claude Code tool responses (stdout/stderr/exit_code)
 # to a structured log file. Uses tempfile for reliable JSON handling.
 
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# --self-test: verify hook works with sample input
+if [[ "${1:-}" == "--self-test" ]]; then
+    echo "=== Self-test: $(basename "$0") ==="
+    pass=0
+    fail=0
+
+    # Test 1: should always pass (exit 0) - logging only
+    echo '{"tool_name":"Bash","tool_input":{"command":"echo test"},"tool_response":{"stdout":"hello","stderr":""},"cwd":"/tmp","session_id":"test","tool_use_id":"test-1"}' | "$0" >/dev/null 2>&1 && rc=$? || rc=$?
+    if [[ $rc -eq 0 ]]; then
+        ((pass++))
+        echo "  PASS: logging succeeded (exit $rc)"
+    else
+        ((fail++))
+        echo "  FAIL: logging failed (exit $rc)"
+    fi
+
+    echo "Results: $pass passed, $fail failed"
+    [[ $fail -eq 0 ]] && exit 0 || exit 1
+fi
+
 set -euo pipefail
 
-THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Check if hook is enabled via centralized project-switch/switch.yaml
+HELPER_SCRIPT="$(dirname "$THIS_DIR")/project-switch/hook_switch_helper.sh"
+if [[ -f "$HELPER_SCRIPT" ]]; then
+    # shellcheck source=/dev/null
+    source "$HELPER_SCRIPT"
+    check_hook_enabled_or_exit "$(basename "$0")"
+fi
 
 GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 
@@ -23,10 +51,10 @@ LOG_FILE="$LOG_DIR/claude-code.log"
 
 # Read entire stdin into a tempfile (avoids env var size limits and escaping issues)
 TMPFILE=$(mktemp /tmp/claude-hook-XXXXXX.json)
-cat > "$TMPFILE"
+cat >"$TMPFILE"
 
 # Parse and log with Python, reading from the tempfile
-python3 - "$TMPFILE" "$LOG_FILE" << 'PYTHON_SCRIPT'
+python3 - "$TMPFILE" "$LOG_FILE" <<'PYTHON_SCRIPT'
 import json
 import sys
 import os
@@ -111,7 +139,8 @@ try:
         # Generic: show first few fields
         for k, v in list(tool_input.items())[:3]:
             if v and isinstance(v, str):
-                lines.append(f"{k}: {v[:100].replace(chr(10), '\\n')}")
+                nl = "\\n"
+                lines.append(f"{k}: {v[:100].replace(chr(10), nl)}")
 
     # --- Tool response ---
     stdout = ""

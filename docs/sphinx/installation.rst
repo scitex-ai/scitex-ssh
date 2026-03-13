@@ -1,8 +1,8 @@
 Installation
 ============
 
-From PyPI
----------
+From PyPI (Python Package Index)
+---------------------------------
 
 .. code-block:: bash
 
@@ -18,7 +18,7 @@ Prerequisites
 -------------
 
 - ``autossh`` installed on the host machine (``sudo apt install autossh``)
-- SSH key pair for authentication
+- SSH (Secure Shell) key pair for authentication
 - A bastion server with SSH access
 
 Development
