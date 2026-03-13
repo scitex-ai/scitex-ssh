@@ -7,13 +7,61 @@ name = "scitex-tunnel"
 version = "0.1.0"
 description = "Persistent SSH reverse tunnel for SciTeX (NAT traversal)"
 readme = "README.md"
+license = "AGPL-3.0-only"
 requires-python = ">=3.9"
-license = { text = "AGPL-3.0" }
 authors = [
-    { name = "Yusuke Watanabe", email = "ywatanabe@scitex.ai" }
+    { name = "Yusuke Watanabe", email = "ywatanabe@scitex.ai" },
 ]
-keywords = ["scitex", "ssh", "tunnel", "reverse-tunnel", "nat-traversal", "autossh"]
-dependencies = ["click"]
+keywords = [
+    "scitex",
+    "ssh",
+    "tunnel",
+    "reverse-tunnel",
+    "nat-traversal",
+    "autossh",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: System :: Networking",
+]
+dependencies = ["click>=8.0.0"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+mcp = [
+    "fastmcp>=2.0.0",
+]
+docs = [
+    "sphinx>=7.0",
+    "sphinx-rtd-theme>=2.0",
+    "myst-parser>=2.0",
+    "sphinx-copybutton>=0.5",
+    "sphinx-autodoc-typehints>=1.25",
+]
+all = [
+    "click>=8.0.0",
+    "fastmcp>=2.0.0",
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "sphinx>=7.0",
+    "sphinx-rtd-theme>=2.0",
+    "myst-parser>=2.0",
+    "sphinx-copybutton>=0.5",
+    "sphinx-autodoc-typehints>=1.25",
+]
 
 [project.scripts]
 scitex-tunnel = "scitex_tunnel.cli:main"
@@ -21,11 +69,10 @@ scitex-tunnel = "scitex_tunnel.cli:main"
 [project.entry-points."scitex_dev.docs"]
 scitex-tunnel = "scitex_tunnel"
 
-[project.optional-dependencies]
-dev = [
-    "pytest",
-    "pytest-cov",
-]
+[project.urls]
+Homepage = "https://github.com/ywatanabe1989/scitex-tunnel"
+Repository = "https://github.com/ywatanabe1989/scitex-tunnel"
+Documentation = "https://scitex-tunnel.readthedocs.io"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/scitex_tunnel"]
