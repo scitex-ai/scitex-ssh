@@ -18,6 +18,9 @@ dependencies = ["click"]
 [project.scripts]
 scitex-tunnel = "scitex_tunnel.cli:main"
 
+[project.entry-points."scitex_dev.docs"]
+scitex-tunnel = "scitex_tunnel"
+
 [project.optional-dependencies]
 dev = [
     "pytest",
