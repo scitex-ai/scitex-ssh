@@ -1,4 +1,4 @@
-"Sphinx configuration for SciTeX Tunnel documentation."
+"""Sphinx configuration for SciTeX Tunnel documentation."""
 
 import os
 import sys
@@ -11,6 +11,7 @@ author = "Yusuke Watanabe"
 
 try:
     from importlib.metadata import version as _get_version
+
     release = _get_version("scitex-tunnel")
 except Exception:
     release = "0.0.0"
