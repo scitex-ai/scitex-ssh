@@ -105,6 +105,14 @@ lint_python() {
 
     # Standard linting
     if command -v ruff &>/dev/null; then
+        # Show what ruff will auto-fix (so agents understand removals)
+        local preview
+        preview=$(ruff check --diff "$file" 2>/dev/null || true)
+        if echo "$preview" | grep -q "^-.*import" 2>/dev/null; then
+            echo "HINT: ruff --fix will remove import(s) from $file." >&2
+            echo "If you added an import for code you haven't written yet," >&2
+            echo "add both import and usage in a single edit to prevent removal." >&2
+        fi
         ruff check --fix "$file" 2>&1
         return $?
     elif command -v flake8 &>/dev/null; then

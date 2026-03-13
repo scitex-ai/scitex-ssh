@@ -251,13 +251,7 @@
       "Bash(bash:*)",
       "Bash(xargs file:*)",
       "Bash(timeout 120 ./scripts/upload-public.sh:*)",
-      "Bash(ssh:*)",
-      "Bash(gh repo:*)",
-      "mcp__scitex__plt_diagram_compile_mermaid",
-      "Bash(npx:*)",
-      "Bash(mmdc:*)",
-      "Bash(sphinx-build:*)",
-      "Bash(git:*)"
+      "Bash(ssh:*)"
     ],
     "deny": [
       "Bash(echo ### SYSTEM ACCESS ###)",
@@ -302,7 +296,7 @@
       "Bash(rmmod:*)"
     ]
   },
-  "model": "opus",
+  "model": "haiku",
   "hooks": {
     "PreToolUse": [
       {

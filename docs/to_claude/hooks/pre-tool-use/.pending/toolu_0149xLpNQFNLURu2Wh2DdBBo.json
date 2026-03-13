@@ -1,4 +1,0 @@
-{
-  "stage": "PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser mmdc -i /home/ywatanabe/proj/scitex-tunnel/docs/architecture.mmd -o /home/ywatanabe/proj/scitex-tunnel/docs/architecture.png -b transparent -w 1200 -H 400",
-  "cwd": "/home/ywatanabe/proj/scitex-tunnel"
-}

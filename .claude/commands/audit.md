@@ -33,6 +33,8 @@ Is everything clean and professional? For example:
   - [ ] Standardized sub-commands:
     $ package-name mcp {start,doctor,installation,list-tools}
     See ~/proj/scitex-code
+  - [ ] For MCP server docs (readme, readthedocs), env var/src examples and setup please learn from ~/proj/scitex-audio
+    - [ ] /home/ywatanabe/proj/scitex-audio/GITIGNORED/LESSONS.md
 
 - [ ] Tests
   - [ ] Is coverage calculated?
@@ -57,7 +59,7 @@ Is everything clean and professional? For example:
 - [ ] PyPI
   - [ ] .github/workflows/publish-pypi.yml
     - [ ] environment pypi
-    - [ ] First need to publish to pypi manually to configure trusted publisher
+    - [ ] First you need to publish to pypi manually. This is required to configure trusted publisher at pypi.org; project itself is not recognized, displayed otherwise.
     - [ ] So, first check if pypi is serving the package and if not, request to the user for configuration
 
 - [ ] No personal info
@@ -99,6 +101,8 @@ Is everything clean and professional? For example:
   ~/proj/scitex-stats
   ~/proj/scitex-clew
   ~/proj/scitex-io
+  ...
+  ~/proj/scitex-dev (this should have all packages listed in the source code to provide ecosystem-wide operations)
 
   Business logics to the most downstream module and upper modules should delegate to downstream packages like a cascade. Keep separation of concerns and do not repeat yourself for single source of truth.
 
@@ -119,6 +123,7 @@ Is everything clean and professional? For example:
   - [ ] Use `$READTHEDOCS_TOKEN` for API access to RTD
   - [ ] First, push to GitHub with the RTD conifg file and source. 
   - [ ] Then, please let me know. I will configure to trigger RTD build on PR to main
+  - [ ] If you can register trusted publisher, please set by yourself
 - [ ] Before pushing to origin/develop, please ensure "/audit" passed
 - [ ] Ensure README.md follows the same format with https://github.com/ywatanabe1989/scitex-clew/README.md
   - [ ] Ensure that README.md organization is as follows. 
@@ -127,6 +132,7 @@ Is everything clean and professional? For example:
         Note: Figure and Tables need legend like in scientific papers
         Note: Figures must be visible in both dark/light modes
         Note: Ensure icons are correctly git-tracked and pushed
+        Note: Acronyms must be spelled out on their first appearance.
     - [ ] Project Title (e.g., `SciTeX Stats`)
     - [ ] Header - Logo, Description, badges, RTD Link, pip install xxx
     - [ ] Problem (scope definition, problem description)
@@ -140,7 +146,8 @@ Is everything clean and professional? For example:
       - [ ] MCP Server
     - [ ] Part of SciTeX
       - [ ] <package-name> is part of SciTeX. When used in side the orchestrator package `scitex`, synergy between modules can be enjoyed: (revise this sentence based on the package and synergy packages with example code)
-      - [ ] The SciTeX ecosystem follows the Four Freedoms for researchers:
+      - [ ] If synergy is not expected skip the "When used in ..." section., skip this as the Python API section above will suffice.
+      - [ ] The SciTeX ecosystem follows the Four Freedoms for researchers, inspired by [the Free Software Definition](https://www.gnu.org/philosophy/free-sw.en.html):
         - [ ] ...
     - [ ] Footer with scitex icon
 - [ ] ./examples implemented
