@@ -1,4 +1,4 @@
-# Contributing to SciTeX
+# Contributing to SciTeX Tunnel
 
 Thank you for your interest in contributing to SciTeX. This guide covers the
 process for reporting issues, suggesting features, and submitting code.
@@ -16,54 +16,37 @@ See [CLA.md](CLA.md) for full details.
 
 ## Reporting Issues
 
-- Search [existing issues](https://github.com/ywatanabe1989/scitex-tunnel/issues)
-  before opening a new one.
+- Search existing issues before opening a new one.
 - Include a minimal reproducible example when reporting bugs.
-- Specify your Python version, OS, and `scitex` version.
+- Specify your Python version, OS, and scitex-tunnel version.
 
 ## Development Setup
 
-```bash
-git clone git@github.com:ywatanabe1989/scitex-tunnel.git
-cd scitex-tunnel
-pip install -e ".[dev]"
-```
+Clone the repo, then install in dev mode with pip.
 
 ## Branch Workflow
 
-- `main` — stable releases only. Do not push directly.
-- `develop` — integration branch. PRs target here.
-- Feature branches — create from `develop`, name as `feature/<description>`.
-
-```bash
-git checkout develop
-git checkout -b feature/my-change
-# ... make changes ...
-git push origin feature/my-change
-# Open PR targeting develop
-```
+- main: stable releases only. Do not push directly.
+- develop: integration branch. PRs target here.
+- Feature branches: create from develop, name as feature/description.
 
 ## Code Style
 
 - Follow existing conventions in the codebase.
-- Use `_` prefix for internal/private modules and functions.
+- Use underscore prefix for internal/private modules and functions.
 - Keep files under 512 lines.
-- Run tests before submitting:
-
-```bash
-pytest tests/ -x -q
-```
+- Run the full test suite before submitting.
 
 ## Pull Request Process
 
-1. Ensure your branch is up to date with `develop`.
+1. Ensure your branch is up to date with develop.
 2. Write tests for new functionality.
 3. Run the test suite and confirm all tests pass.
-4. Open a PR targeting `develop` with a clear description.
+4. Open a PR targeting develop with a clear description.
 5. The CLA bot will check your CLA status on your first PR.
 
 ## License
 
-By contributing, you agree to the terms of the [CLA](CLA.md), which includes
-licensing under AGPL-3.0 (see [LICENSE](LICENSE)) and the dual-licensing
+By contributing, you agree to the terms of the CLA, which includes
+licensing under AGPL-3.0 (see LICENSE) and the dual-licensing
 provisions described therein.

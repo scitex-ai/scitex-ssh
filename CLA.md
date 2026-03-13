@@ -1,6 +1,6 @@
 # SciTeX Contributor License Agreement (CLA)
 
-Version 1.0 — Effective 2026-03-12
+Version 1.0 — Effective 2026-03-14
 
 ## Purpose
 
