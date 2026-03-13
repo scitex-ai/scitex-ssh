@@ -78,6 +78,8 @@ pip install scitex-tunnel
 
 > **Note**: `setup` and `remove` require **sudo** privileges because they write systemd service files to `/etc/systemd/system/` and run `systemctl` commands. You will be prompted for your password.
 
+> **Disclaimer**: Before setting up reverse tunnels, please check your organization's acceptable use policy and network terms of service. Reverse tunnels may bypass institutional firewalls or network policies. The authors accept no responsibility for any consequences arising from the use of this software.
+
 <details>
 <summary><strong>Alternative: No-sudo setup via ~/.bashrc (no root access needed)</strong></summary>
 

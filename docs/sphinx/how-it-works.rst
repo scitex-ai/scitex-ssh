@@ -3,6 +3,13 @@ How It Works
 
 This page explains the architecture and internals of SciTeX Tunnel.
 
+.. warning::
+
+   Before setting up reverse tunnels, please check your organization's acceptable
+   use policy and network terms of service. Reverse tunnels may bypass institutional
+   firewalls or network policies. The authors accept no responsibility for any
+   consequences arising from the use of this software.
+
 The Problem: NAT (Network Address Translation) Traversal
 ---------------------------------------------------------
 
