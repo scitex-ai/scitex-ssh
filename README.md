@@ -108,6 +108,43 @@ fi
 </details>
 
 <details>
+<summary><strong>Alternative: Persistent session via screen, tmux, or nohup (no root, survives logout)</strong></summary>
+
+<br>
+
+For long-running sessions on HPC or shared servers where you want the tunnel to survive logout:
+
+```bash
+# Option 1: screen (detaches from terminal)
+screen -dmS tunnel autossh -M 0 -N \
+    -o "ServerAliveInterval=30" -o "ServerAliveCountMax=3" \
+    -i ~/.ssh/id_rsa -R 2222:localhost:22 user@bastion.example.com
+
+# Reattach:  screen -r tunnel
+# Kill:      screen -S tunnel -X quit
+
+# Option 2: tmux
+tmux new-session -d -s tunnel "autossh -M 0 -N \
+    -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
+    -i ~/.ssh/id_rsa -R 2222:localhost:22 user@bastion.example.com"
+
+# Reattach:  tmux attach -t tunnel
+# Kill:      tmux kill-session -t tunnel
+
+# Option 3: nohup (simplest, no terminal multiplexer needed)
+nohup autossh -M 0 -N \
+    -o "ServerAliveInterval=30" -o "ServerAliveCountMax=3" \
+    -i ~/.ssh/id_rsa -R 2222:localhost:22 user@bastion.example.com \
+    > /dev/null 2>&1 &
+
+# Kill:      pkill -f "autossh.*-R 2222:localhost:22"
+```
+
+**Trade-offs**: No sudo needed. Survives logout (unlike ~/.bashrc approach). Does not survive reboot — you must restart manually or add the command to a cron `@reboot` job.
+
+</details>
+
+<details>
 <summary><strong>Alternative: Direct shell scripts (no Python required)</strong></summary>
 
 <br>

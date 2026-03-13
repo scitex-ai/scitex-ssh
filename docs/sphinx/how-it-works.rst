@@ -221,6 +221,78 @@ can run autossh directly from your shell profile without systemd. Add to ``~/.ba
      - ``systemctl start/stop/status``
      - ``pgrep`` / ``pkill``
 
+Alternative: Persistent Session (screen, tmux, nohup)
+------------------------------------------------------
+
+For long-running sessions where you want the tunnel to survive logout without
+sudo or systemd:
+
+.. code-block:: bash
+
+    # Option 1: screen (detaches from terminal)
+    screen -dmS tunnel autossh -M 0 -N \
+        -o "ServerAliveInterval=30" -o "ServerAliveCountMax=3" \
+        -i ~/.ssh/id_rsa -R 2222:localhost:22 user@bastion.example.com
+
+    # Reattach:  screen -r tunnel
+    # Kill:      screen -S tunnel -X quit
+
+    # Option 2: tmux
+    tmux new-session -d -s tunnel "autossh -M 0 -N \
+        -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
+        -i ~/.ssh/id_rsa -R 2222:localhost:22 user@bastion.example.com"
+
+    # Reattach:  tmux attach -t tunnel
+    # Kill:      tmux kill-session -t tunnel
+
+    # Option 3: nohup (simplest)
+    nohup autossh -M 0 -N \
+        -o "ServerAliveInterval=30" -o "ServerAliveCountMax=3" \
+        -i ~/.ssh/id_rsa -R 2222:localhost:22 user@bastion.example.com \
+        > /dev/null 2>&1 &
+
+    # Kill:      pkill -f "autossh.*-R 2222:localhost:22"
+
+.. tip::
+
+   To survive reboots without sudo, add the command to a cron ``@reboot`` job:
+
+   .. code-block:: bash
+
+       crontab -e
+       # Add this line:
+       @reboot autossh -M 0 -f -N -o "ServerAliveInterval=30" -o "ServerAliveCountMax=3" -i ~/.ssh/id_rsa -R 2222:localhost:22 user@bastion.example.com
+
+.. list-table:: Comparison of all approaches
+   :header-rows: 1
+   :widths: 20 20 20 20 20
+
+   * - Approach
+     - Sudo
+     - Survives logout
+     - Survives reboot
+     - Management
+   * - systemd (default)
+     - Yes
+     - Yes
+     - Yes
+     - ``systemctl``
+   * - ~/.bashrc
+     - No
+     - No (restarts on login)
+     - No
+     - ``pgrep`` / ``pkill``
+   * - screen / tmux / nohup
+     - No
+     - Yes
+     - No (unless cron @reboot)
+     - ``screen -r`` / ``tmux attach``
+   * - cron @reboot + nohup
+     - No
+     - Yes
+     - Yes
+     - ``crontab -e`` / ``pkill``
+
 Alternative: Direct Shell Scripts
 ---------------------------------
 
