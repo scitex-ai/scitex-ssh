@@ -116,19 +116,27 @@ def main(ctx, version, help_recursive):
 
 @main.command()
 @click.option("-p", "--port", required=True, type=int, help="Remote port to forward.")
-@click.option("-b", "--bastion", required=True, help="Bastion server hostname or IP.")
+@click.option(
+    "-b",
+    "--bastion",
+    default=None,
+    help="Bastion server hostname or IP. [env: SCITEX_TUNNEL_BASTION_SERVER]",
+)
 @click.option(
     "-s",
     "--secret-key",
-    required=True,
-    help="Path to SSH private key.",
-    type=click.Path(exists=True),
+    default=None,
+    help="Path to SSH private key. [env: SCITEX_TUNNEL_SECRET_KEY_PATH]",
 )
 def setup(port, bastion, secret_key):
     """Set up a persistent SSH reverse tunnel."""
     import scitex_tunnel
 
-    result = scitex_tunnel.setup(port, bastion, secret_key)
+    try:
+        result = scitex_tunnel.setup(port, bastion, secret_key)
+    except ValueError as e:
+        click.secho(f"ERROR: {e}", fg="red", err=True)
+        raise SystemExit(1)
     if result["success"]:
         click.secho(f"Tunnel on port {port} set up successfully.", fg="green")
         if result["stdout"]:

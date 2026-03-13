@@ -204,5 +204,26 @@ class TestMCPCli:
         assert result.exit_code == 0
         assert "params:" in result.output
 
+    def test_mcp_doctor(self):
+        runner = CliRunner()
+        result = runner.invoke(main, ["mcp", "doctor"])
+        assert result.exit_code == 0
+        assert "fastmcp" in result.output
+
+    def test_mcp_installation(self):
+        runner = CliRunner()
+        result = runner.invoke(main, ["mcp", "installation"])
+        assert result.exit_code == 0
+        assert "pip install scitex-tunnel[mcp]" in result.output
+        assert "mcpServers" in result.output
+
+    @patch("scitex_tunnel.setup")
+    def test_setup_env_var_fallback_error(self, mock_setup):
+        mock_setup.side_effect = ValueError("bastion_server is required")
+        runner = CliRunner()
+        result = runner.invoke(main, ["setup", "-p", "2222"])
+        assert result.exit_code != 0
+        assert "bastion_server is required" in result.output
+
 
 # EOF

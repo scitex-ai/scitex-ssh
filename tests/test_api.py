@@ -79,6 +79,42 @@ class TestSetup:
         assert result["success"] is False
         assert result["stderr"] == "Permission denied"
 
+    @patch("scitex_tunnel.subprocess.run")
+    @patch.dict(
+        os.environ,
+        {
+            "SCITEX_TUNNEL_BASTION_SERVER": "env@bastion",
+            "SCITEX_TUNNEL_SECRET_KEY_PATH": "/env/key",
+        },
+    )
+    def test_setup_uses_env_vars(self, mock_run):
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="OK", stderr=""
+        )
+        result = scitex_tunnel.setup(2222)
+        assert result["success"] is True
+        args = mock_run.call_args[0][0]
+        assert "env@bastion" in args
+        assert "/env/key" in args
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_setup_raises_without_bastion(self):
+        import pytest
+
+        with pytest.raises(ValueError, match="bastion_server is required"):
+            scitex_tunnel.setup(2222)
+
+    @patch.dict(
+        os.environ,
+        {"SCITEX_TUNNEL_BASTION_SERVER": "env@bastion"},
+        clear=True,
+    )
+    def test_setup_raises_without_secret_key(self):
+        import pytest
+
+        with pytest.raises(ValueError, match="secret_key_path is required"):
+            scitex_tunnel.setup(2222)
+
 
 class TestRemove:
     """Tests for remove() function."""

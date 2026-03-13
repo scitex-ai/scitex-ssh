@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
-# Script created on: 2024-06-22 12:55:46
-# Script path: /home/ywatanabe/autossh-reverse-tunneling/scripts/setup-autossh-service.sh
-
+# setup-autossh-service.sh — Create a systemd autossh reverse tunnel service
 
 main() {
     TGT_SERVICE_PATH=/etc/systemd/system/autossh-tunnel-"$PORT".service
-    SERVICE_NAME=`basename $TGT_SERVICE_PATH`
+    SERVICE_NAME=$(basename "$TGT_SERVICE_PATH")
 
     write-autossh-service
     restart-service
 }
 
 write-autossh-service() {
-    sudo tee "$TGT_SERVICE_PATH" > /dev/null << EOF
+    sudo tee "$TGT_SERVICE_PATH" >/dev/null <<EOF
         [Unit]
         Description=AutoSSH tunnel service
         After=network-online.target
@@ -36,7 +34,6 @@ EOF
     echo -e "\nSee $TGT_SERVICE_PATH"
 }
 
-
 trim-whitespaces() {
     local fpath=$1
     sudo sed -i 's/^[[:space:]]*//' "$fpath"
@@ -50,7 +47,6 @@ restart-service() {
     sudo systemctl status "$SERVICE_NAME"
 }
 
-
 # Argument parsing
 usage() {
     echo "Usage: $0 -p PORT -b BASTION_SERVER -s SECRET_KEY_PATH [-h]"
@@ -63,18 +59,17 @@ usage() {
 
 while getopts "p:b:s:h" opt; do
     case $opt in
-        p) PORT=$OPTARG ;;
-        b) BASTION_SERVER=$OPTARG ;;
-        s) SECRET_KEY_PATH=$OPTARG ;;
-        h) usage ;;
-        *) usage ;;
+    p) PORT=$OPTARG ;;
+    b) BASTION_SERVER=$OPTARG ;;
+    s) SECRET_KEY_PATH=$OPTARG ;;
+    h) usage ;;
+    *) usage ;;
     esac
 done
 
 if [ -z "$PORT" ] || [ -z "$BASTION_SERVER" ] || [ -z "$SECRET_KEY_PATH" ]; then
     usage
 fi
-
 
 # Main
 main

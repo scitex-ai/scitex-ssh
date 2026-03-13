@@ -131,6 +131,26 @@ scitex-tunnel mcp start
 
 </details>
 
+## Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `SCITEX_TUNNEL_BASTION_SERVER` | Default bastion server | `user@bastion.example.com` |
+| `SCITEX_TUNNEL_SECRET_KEY_PATH` | Default SSH private key path | `~/.ssh/id_rsa` |
+| `SCITEX_TUNNEL_DEBUG_MODE` | Enable verbose output (`1`) | `0` |
+
+<p align="center"><sub><b>Table 3.</b> Environment variables. CLI flags take precedence when provided.</sub></p>
+
+Set these in `.env` or your shell profile to avoid repeating `-b` and `-s` flags:
+
+```bash
+export SCITEX_TUNNEL_BASTION_SERVER=user@bastion.example.com
+export SCITEX_TUNNEL_SECRET_KEY_PATH=~/.ssh/id_rsa
+
+# Now just specify the port
+scitex-tunnel setup -p 2222
+```
+
 ## Part of SciTeX
 
 Tunnel is part of [**SciTeX**](https://scitex.ai). When used inside the SciTeX framework, tunnel management integrates with the orchestrator:

@@ -1,6 +1,5 @@
-#!/bin/bash
-# Script created on: 2024-06-22 14:47:13
-# Script path: /home/ywatanabe/setup-persistent-ssh-reverse-tunnel/remove-autossh-service.sh
+#!/usr/bin/env bash
+# remove-autossh-service.sh — Remove a systemd autossh reverse tunnel service
 
 # Argument Parser
 while [[ "$#" -gt 0 ]]; do

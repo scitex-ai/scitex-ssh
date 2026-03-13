@@ -3,7 +3,16 @@
 
 from unittest.mock import patch
 
-from scitex_tunnel._mcp._server import create_server
+import pytest
+
+try:
+    from scitex_tunnel._mcp._server import create_server
+
+    HAS_FASTMCP = True
+except ImportError:
+    HAS_FASTMCP = False
+
+pytestmark = pytest.mark.skipif(not HAS_FASTMCP, reason="fastmcp not installed")
 
 
 class TestCreateServer:
