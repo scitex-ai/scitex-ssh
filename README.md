@@ -79,11 +79,40 @@ pip install scitex-tunnel
 > **Note**: `setup` and `remove` require **sudo** privileges because they write systemd service files to `/etc/systemd/system/` and run `systemctl` commands. You will be prompted for your password.
 
 <details>
+<summary><strong>Alternative: No-sudo setup via ~/.bashrc (no root access needed)</strong></summary>
+
+<br>
+
+If you do not have sudo access (e.g., shared HPC nodes, university servers), you can run autossh directly from your shell profile. Add to `~/.bashrc`:
+
+```bash
+# Persistent reverse tunnel without sudo — starts on every login
+# Checks if tunnel is already running before starting
+if ! pgrep -f "autossh.*-R 2222:localhost:22" > /dev/null 2>&1; then
+    autossh -M 0 -f -N \
+        -o "PubkeyAuthentication=yes" \
+        -o "PasswordAuthentication=no" \
+        -o "ServerAliveInterval=30" \
+        -o "ServerAliveCountMax=3" \
+        -i ~/.ssh/id_rsa \
+        -R 2222:localhost:22 user@bastion.example.com
+fi
+```
+
+**Trade-offs vs. systemd approach**:
+- No sudo required
+- Starts on user login (not on boot — requires an active login session)
+- No automatic restart if autossh crashes between logins
+- `-f` runs autossh in the background; `-M 0` relies on SSH keepalives
+
+</details>
+
+<details>
 <summary><strong>Alternative: Direct shell scripts (no Python required)</strong></summary>
 
 <br>
 
-If you prefer not to install the Python package, you can use the shell scripts directly. Add to your `~/.bashrc`:
+If you have sudo access but prefer not to install Python, use the shell scripts directly:
 
 ```bash
 # Download the scripts (one-time)
@@ -93,7 +122,7 @@ curl -o ~/.local/bin/remove-autossh-service.sh \
   https://raw.githubusercontent.com/ywatanabe1989/scitex-tunnel/main/src/scitex_tunnel/scripts/remove-autossh-service.sh
 chmod +x ~/.local/bin/setup-autossh-service.sh ~/.local/bin/remove-autossh-service.sh
 
-# Usage
+# Usage (requires sudo)
 setup-autossh-service.sh -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
 remove-autossh-service.sh -p 2222
 ```

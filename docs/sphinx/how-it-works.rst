@@ -179,11 +179,52 @@ Prerequisites
 - **sudo access**: Required on the lab workstation to write systemd unit files
   in ``/etc/systemd/system/`` and run ``systemctl``.
 
+Alternative: No-sudo Setup via ~/.bashrc
+-----------------------------------------
+
+If you do not have sudo access (e.g., shared HPC nodes, university servers), you
+can run autossh directly from your shell profile without systemd. Add to ``~/.bashrc``:
+
+.. code-block:: bash
+
+    # Persistent reverse tunnel without sudo — starts on every login
+    # Checks if tunnel is already running before starting
+    if ! pgrep -f "autossh.*-R 2222:localhost:22" > /dev/null 2>&1; then
+        autossh -M 0 -f -N \
+            -o "PubkeyAuthentication=yes" \
+            -o "PasswordAuthentication=no" \
+            -o "ServerAliveInterval=30" \
+            -o "ServerAliveCountMax=3" \
+            -i ~/.ssh/id_rsa \
+            -R 2222:localhost:22 user@bastion.example.com
+    fi
+
+**Trade-offs vs. systemd approach:**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 35 35
+
+   * - Aspect
+     - systemd (with sudo)
+     - ~/.bashrc (no sudo)
+   * - Root access
+     - Required
+     - Not required
+   * - Starts on
+     - Boot (no login needed)
+     - User login only
+   * - Crash recovery
+     - systemd restarts automatically
+     - autossh reconnects SSH; no restart if autossh itself crashes
+   * - Management
+     - ``systemctl start/stop/status``
+     - ``pgrep`` / ``pkill``
+
 Alternative: Direct Shell Scripts
 ---------------------------------
 
-If you prefer not to install the Python package, you can use the underlying shell
-scripts directly. This is useful on minimal systems or when Python is not available.
+If you have sudo access but prefer not to install Python, use the shell scripts directly:
 
 .. code-block:: bash
 
@@ -197,5 +238,3 @@ scripts directly. This is useful on minimal systems or when Python is not availa
     # Usage (requires sudo for systemd operations)
     setup-autossh-service.sh -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
     remove-autossh-service.sh -p 2222
-
-You can also add these to your ``~/.bashrc`` or ``~/.bash_aliases`` for convenience.
