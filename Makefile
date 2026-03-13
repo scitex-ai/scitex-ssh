@@ -50,15 +50,15 @@ test-coverage:
 # ============================================================================
 build:
 	@echo "Building distribution packages..."
-	python -m build
+	python3 -m build
 
 upload:
 	@echo "Uploading to PyPI..."
-	python -m twine upload dist/*
+	python3 -m twine upload dist/*
 
 upload-test:
 	@echo "Uploading to Test PyPI..."
-	python -m twine upload --repository testpypi dist/*
+	python3 -m twine upload --repository testpypi dist/*
 
 # ============================================================================
 # Documentation
