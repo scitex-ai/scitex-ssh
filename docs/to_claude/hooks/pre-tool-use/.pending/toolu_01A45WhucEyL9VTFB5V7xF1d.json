@@ -1,0 +1,4 @@
+{
+  "stage": "sphinx-build -b html . _build/html",
+  "cwd": "/home/ywatanabe/proj/scitex-tunnel"
+}

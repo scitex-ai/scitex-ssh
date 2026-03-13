@@ -12,7 +12,37 @@
 #   - permission_prompt: Claude needs permission
 #   - stop: Task completed
 
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# --self-test: verify hook works with sample input
+if [[ "${1:-}" == "--self-test" ]]; then
+    echo "=== Self-test: $(basename "$0") ==="
+    pass=0
+    fail=0
+
+    # Test 1: without email password, should exit 0 (skip)
+    SCITEX_EMAIL_PASSWORD="" "$0" <<<'{"notification_type":"idle_prompt"}' >/dev/null 2>&1 && rc=$? || rc=$?
+    if [[ $rc -eq 0 ]]; then
+        ((pass++))
+        echo "  PASS: no-password skip (exit $rc)"
+    else
+        ((fail++))
+        echo "  FAIL: should skip without password (exit $rc)"
+    fi
+
+    echo "Results: $pass passed, $fail failed"
+    [[ $fail -eq 0 ]] && exit 0 || exit 1
+fi
+
 set -euo pipefail
+
+# Check if hook is enabled via centralized project-switch/switch.yaml
+HELPER_SCRIPT="$(dirname "$THIS_DIR")/project-switch/hook_switch_helper.sh"
+if [[ -f "$HELPER_SCRIPT" ]]; then
+    # shellcheck source=/dev/null
+    source "$HELPER_SCRIPT"
+    check_hook_enabled_or_exit "$(basename "$0")"
+fi
 
 # Email configuration (from SCITEX env)
 SMTP_SERVER="${SCITEX_SMTP_SERVER:-mail1030.onamae.ne.jp}"
@@ -42,7 +72,7 @@ send_email() {
     local subject="$1"
     local body="$2"
 
-    python3 << PYEOF
+    python3 <<PYEOF
 import smtplib
 import ssl
 from email.mime.text import MIMEText
@@ -81,47 +111,47 @@ TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
 # Determine message based on notification type
 case "$NOTIFICATION_TYPE" in
-    idle_prompt)
-        send_email \
-            "[Claude Code] Waiting for input - $PROJECT_NAME" \
-            "Claude Code is waiting for your input.
+idle_prompt)
+    send_email \
+        "[Claude Code] Waiting for input - $PROJECT_NAME" \
+        "Claude Code is waiting for your input.
 
 Project: $PROJECT_NAME
 Time: $TIMESTAMP
 
 Please check your terminal."
-        ;;
-    permission_prompt)
-        send_email \
-            "[Claude Code] Permission required - $PROJECT_NAME" \
-            "Claude Code needs your permission to continue.
+    ;;
+permission_prompt)
+    send_email \
+        "[Claude Code] Permission required - $PROJECT_NAME" \
+        "Claude Code needs your permission to continue.
 
 Project: $PROJECT_NAME
 Time: $TIMESTAMP
 
 Please check your terminal to approve or deny the action."
-        ;;
-    stop)
-        send_email \
-            "[Claude Code] Task completed - $PROJECT_NAME" \
-            "Claude Code has finished the current task.
+    ;;
+stop)
+    send_email \
+        "[Claude Code] Task completed - $PROJECT_NAME" \
+        "Claude Code has finished the current task.
 
 Project: $PROJECT_NAME
 Time: $TIMESTAMP
 
 Review the changes in your terminal."
-        ;;
-    *)
-        send_email \
-            "[Claude Code] Attention needed - $PROJECT_NAME" \
-            "Claude Code needs your attention.
+    ;;
+*)
+    send_email \
+        "[Claude Code] Attention needed - $PROJECT_NAME" \
+        "Claude Code needs your attention.
 
 Type: $NOTIFICATION_TYPE
 Project: $PROJECT_NAME
 Time: $TIMESTAMP
 
 Please check your terminal."
-        ;;
+    ;;
 esac
 
 exit 0

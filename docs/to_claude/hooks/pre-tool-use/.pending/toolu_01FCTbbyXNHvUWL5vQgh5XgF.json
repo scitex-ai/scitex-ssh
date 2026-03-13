@@ -1,0 +1,4 @@
+{
+  "stage": "gh repo edit ywatanabe1989/scitex-tunnel --description \"Persistent SSH (Secure Shell) reverse tunnel for SciTeX — NAT (Network Address Translation) traversal via autossh\"",
+  "cwd": "/home/ywatanabe/proj/scitex-tunnel"
+}

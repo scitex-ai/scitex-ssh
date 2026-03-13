@@ -12,9 +12,37 @@
 #
 # Exit codes: 0 = passed, 2 = failed (no test or test failed)
 
+# --self-test: verify hook works with sample input
+if [[ "${1:-}" == "--self-test" ]]; then
+    echo "=== Self-test: $(basename "$0") ==="
+    pass=0
+    fail=0
+
+    # Test 1: non-existent file should pass gracefully (exit 0)
+    echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/nonexistent_test_hook_file.py","content":"x=1"},"tool_response":{"stdout":"","stderr":""},"cwd":"/tmp","session_id":"test","tool_use_id":"test-1"}' | "$0" >/dev/null 2>&1 && rc=$? || rc=$?
+    if [[ $rc -eq 0 ]]; then
+        ((pass++))
+        echo "  PASS: non-existent file handled (exit $rc)"
+    else
+        ((fail++))
+        echo "  FAIL: should handle gracefully (exit $rc)"
+    fi
+
+    echo "Results: $pass passed, $fail failed"
+    [[ $fail -eq 0 ]] && exit 0 || exit 1
+fi
+
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Check if hook is enabled via centralized project-switch/switch.yaml
+HELPER_SCRIPT="$(dirname "$SCRIPT_DIR")/project-switch/hook_switch_helper.sh"
+if [[ -f "$HELPER_SCRIPT" ]]; then
+    # shellcheck source=/dev/null
+    source "$HELPER_SCRIPT"
+    check_hook_enabled_or_exit "$(basename "$0")"
+fi
 
 # =============================================================================
 # SKIP CONFIGURATION
@@ -34,6 +62,7 @@ SKIP_EXTENSIONS=(".md" ".rst" ".txt" ".json" ".yaml" ".yml" ".toml" ".ini"
     ".d.ts" ".lock" ".cfg" ".conf")
 
 # Load project-specific config if exists
+# shellcheck source=/dev/null
 [ -f "$SCRIPT_DIR/run_tests.conf" ] && source "$SCRIPT_DIR/run_tests.conf"
 
 # =============================================================================
@@ -75,6 +104,7 @@ in_skip_dir() {
 
 is_skip_file() {
     for pattern in "${SKIP_FILES[@]}"; do
+        # shellcheck disable=SC2254
         case "$1" in $pattern) return 0 ;; esac
     done
     return 1
@@ -134,7 +164,7 @@ fi
 # NO TEST FILE → FAIL
 # =============================================================================
 if [ -z "$TEST_FILE" ]; then
-    local_path="${FILE_PATH#$PROJECT_ROOT/}"
+    local_path="${FILE_PATH#"$PROJECT_ROOT"/}"
     basename_no_ext="${FILENAME%.*}"
     ext="${FILENAME##*.}"
     echo "" >&2

@@ -4,11 +4,13 @@
 # File: .//home/ywatanabe/.claude/hooks/session-start/hello_world.sh
 
 ORIG_DIR="$(pwd)"
-THIS_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
-LOG_PATH="$THIS_DIR/.$(basename $0).log"
-echo > "$LOG_PATH"
+export ORIG_DIR
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_PATH="$THIS_DIR/.$(basename "$0").log"
+echo >"$LOG_PATH" 2>/dev/null || true
 
 GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+export GIT_ROOT
 
 GRAY='\033[0;90m'
 GREEN='\033[0;32m'
@@ -23,12 +25,40 @@ echo_error() { echo -e "${RED}ERRO: $1${NC}"; }
 echo_header() { echo_info "=== $1 ==="; }
 # ---------------------------------------
 
+# --self-test: verify hook works with sample input
+if [[ "${1:-}" == "--self-test" ]]; then
+    echo "=== Self-test: $(basename "$0") ==="
+    pass=0
+    fail=0
+
+    # Test 1: should always succeed (exit 0)
+    echo '{}' | "$0" >/dev/null 2>&1 && rc=$? || rc=$?
+    if [[ $rc -eq 0 ]]; then
+        ((pass++))
+        echo "  PASS: session start hook (exit $rc)"
+    else
+        ((fail++))
+        echo "  FAIL: should always pass (exit $rc)"
+    fi
+
+    echo "Results: $pass passed, $fail failed"
+    [[ $fail -eq 0 ]] && exit 0 || exit 1
+fi
+
 # Simple SessionStart hello world hook
 
 set -euo pipefail
 
+# Check if hook is enabled via centralized project-switch/switch.yaml
+HELPER_SCRIPT="$(dirname "$THIS_DIR")/project-switch/hook_switch_helper.sh"
+if [[ -f "$HELPER_SCRIPT" ]]; then
+    # shellcheck source=/dev/null
+    source "$HELPER_SCRIPT"
+    check_hook_enabled_or_exit "$(basename "$0")"
+fi
+
 # Read stdin (required for hooks)
-INPUT="$(cat)"
+cat >/dev/null
 
 # Output goes to the conversation as a system message
 echo "Hello World! Session started at $(date)"

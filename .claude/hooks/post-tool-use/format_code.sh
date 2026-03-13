@@ -5,7 +5,7 @@
 
 THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_PATH="$THIS_DIR/.$(basename "$0").log"
-echo >"$LOG_PATH"
+echo >"$LOG_PATH" 2>/dev/null || true
 
 GRAY='\033[0;90m'
 GREEN='\033[0;32m'
@@ -34,7 +34,35 @@ echo_header() { echo_info "=== $1 ==="; }
 #   0 = Success
 #   1 = Warning (non-blocking)
 
+# --self-test: verify hook works with sample input
+if [[ "${1:-}" == "--self-test" ]]; then
+    echo "=== Self-test: $(basename "$0") ==="
+    pass=0
+    fail=0
+
+    # Test 1: non-existent file should pass gracefully (exit 0)
+    echo '{"tool_name":"Write","tool_input":{"file_path":"/tmp/nonexistent_test_hook_file.py","content":"x=1"},"tool_response":{"stdout":"","stderr":""},"cwd":"/tmp","session_id":"test","tool_use_id":"test-1"}' | "$0" >/dev/null 2>&1 && rc=$? || rc=$?
+    if [[ $rc -eq 0 ]]; then
+        ((pass++))
+        echo "  PASS: non-existent file handled (exit $rc)"
+    else
+        ((fail++))
+        echo "  FAIL: should handle gracefully (exit $rc)"
+    fi
+
+    echo "Results: $pass passed, $fail failed"
+    [[ $fail -eq 0 ]] && exit 0 || exit 1
+fi
+
 set -euo pipefail
+
+# Check if hook is enabled via centralized project-switch/switch.yaml
+HELPER_SCRIPT="$(dirname "$THIS_DIR")/project-switch/hook_switch_helper.sh"
+if [[ -f "$HELPER_SCRIPT" ]]; then
+    # shellcheck source=/dev/null
+    source "$HELPER_SCRIPT"
+    check_hook_enabled_or_exit "$(basename "$0")"
+fi
 
 # Add tool paths if they exist
 NPM_GLOBAL_BIN="$HOME/.npm-global/bin"

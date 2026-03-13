@@ -3,12 +3,11 @@
 # Timestamp: "2026-01-09 16:51:51 (ywatanabe)"
 # File: ./.claude/hooks/pre-tool-use/log_pre_tool_use.sh
 
-ORIG_DIR="$(pwd)"
-THIS_DIR="$(cd $(dirname ${BASH_SOURCE[0]}) && pwd)"
-LOG_PATH="$THIS_DIR/.$(basename $0).log"
-echo > "$LOG_PATH"
+THIS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_PATH="$THIS_DIR/.$(basename "$0").log"
+echo >"$LOG_PATH" 2>/dev/null || true
 
-GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || true
 
 GRAY='\033[0;90m'
 GREEN='\033[0;32m'
@@ -25,17 +24,43 @@ echo_header() { echo_info "=== $1 ==="; }
 
 # Description: Logs all Claude Code tool uses to a timestamped log file
 
+# --self-test: verify hook works with sample input
+if [[ "${1:-}" == "--self-test" ]]; then
+    echo "=== Self-test: $(basename "$0") ==="
+    pass=0
+    fail=0
+
+    # Test 1: should always pass (exit 0) - logging only
+    # shellcheck disable=SC2034
+    result=$(printf '%s' '{"tool_name":"Bash","tool_input":{"command":"echo test"},"cwd":"/tmp","session_id":"test","tool_use_id":"test-1"}' | "$0" 2>&1) && rc=$? || rc=$?
+    if [[ $rc -eq 0 ]]; then
+        ((pass++))
+        echo "  PASS: logging succeeded (exit $rc)"
+    else
+        ((fail++))
+        echo "  FAIL: logging failed (exit $rc)"
+    fi
+
+    echo "Results: $pass passed, $fail failed"
+    [[ $fail -eq 0 ]] && exit 0 || exit 1
+fi
+
+set -euo pipefail
+
+# Check if hook is enabled via centralized project-switch/switch.yaml
+HELPER_SCRIPT="$(dirname "$THIS_DIR")/project-switch/hook_switch_helper.sh"
+if [[ -f "$HELPER_SCRIPT" ]]; then
+    # shellcheck source=/dev/null
+    source "$HELPER_SCRIPT"
+    check_hook_enabled_or_exit "$(basename "$0")"
+fi
+
 # Log file location - same as post-tool-use log
 LOG_DIR="$GIT_ROOT/logs/"
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/claude-code.log"
 
-echo "$0" >> "$LOG_FILE"
-
-# # Log file location
-# LOG_DIR="$HOME/.claude/logs"
-# mkdir -p "$LOG_DIR"
-# LOG_FILE="$LOG_DIR/tool_use.log"
+echo "$0" >>"$LOG_FILE"
 
 # Read input from stdin
 INPUT="$(cat)"
@@ -86,10 +111,11 @@ try:
         if tool_name == "Edit":
             old_str = tool_input.get("old_string", "")[:80]
             new_str = tool_input.get("new_string", "")[:80]
+            nl = "\\n"
             if old_str:
-                lines.append(f"Old:  {old_str.replace(chr(10), '\\n')}")
+                lines.append(f"Old:  {old_str.replace(chr(10), nl)}")
             if new_str:
-                lines.append(f"New:  {new_str.replace(chr(10), '\\n')}")
+                lines.append(f"New:  {new_str.replace(chr(10), nl)}")
 
     elif tool_name == "Glob":
         pattern = tool_input.get("pattern", "")
