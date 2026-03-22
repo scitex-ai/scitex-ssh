@@ -280,7 +280,7 @@ result = scitex.tunnel.setup(2222, "user@bastion.example.com", "~/.ssh/id_rsa")
 scitex.tunnel.status()
 ```
 
-The SciTeX ecosystem follows the Four Freedoms for researchers:
+The SciTeX system follows the Four Freedoms for Research below, inspired by [the Free Software Definition](https://www.gnu.org/philosophy/free-sw.en.html):
 
 >Four Freedoms for Research
 >
@@ -289,7 +289,7 @@ The SciTeX ecosystem follows the Four Freedoms for researchers:
 >2. The freedom to **redistribute** your workflows, not just your papers.
 >3. The freedom to **modify** any module and share improvements with the community.
 >
->AGPL-3.0 — because research infrastructure deserves the same freedoms as the software it runs on.
+>AGPL-3.0 — because we believe research infrastructure deserves the same freedoms as the software it runs on.
 
 ---
 

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scitex-tunnel"
-version = "0.2.0"
+version = "0.2.1"
 description = "Persistent SSH reverse tunnel for SciTeX (NAT traversal)"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -70,6 +70,9 @@ scitex-tunnel = "scitex_tunnel.cli:main"
 [project.entry-points."scitex_dev.docs"]
 scitex-tunnel = "scitex_tunnel"
 
+[project.entry-points."scitex_dev.skills"]
+scitex-tunnel = "scitex_tunnel"
+
 [project.urls]
 Homepage = "https://github.com/ywatanabe1989/scitex-tunnel"
 Repository = "https://github.com/ywatanabe1989/scitex-tunnel"
@@ -77,6 +80,9 @@ Documentation = "https://scitex-tunnel.readthedocs.io"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/scitex_tunnel"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/scitex_tunnel/skills" = "scitex_tunnel/skills"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,4 +1,0 @@
-{
-  "stage": "npx --yes @mermaid-js/mermaid-cli --version",
-  "cwd": "/home/ywatanabe/proj/scitex-tunnel"
-}
