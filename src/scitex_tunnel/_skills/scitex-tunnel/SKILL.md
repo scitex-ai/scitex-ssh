@@ -1,5 +1,4 @@
 ---
-name: scitex-tunnel
 description: Persistent SSH reverse tunnel for NAT traversal - auto-reconnecting tunnels for accessing machines behind firewalls. Use when setting up remote access to lab machines or HPC nodes.
 allowed-tools: mcp__scitex__tunnel_*
 ---
