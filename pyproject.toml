@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scitex-tunnel"
-version = "0.2.4"
+version = "0.2.5"
 description = "Persistent SSH reverse tunnel for SciTeX (NAT traversal)"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -24,7 +24,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: GNU Affero General Public License v3",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
