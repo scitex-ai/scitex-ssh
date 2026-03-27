@@ -6,6 +6,13 @@ allowed-tools: mcp__scitex__tunnel_*
 
 # SSH Tunnels with scitex-tunnel
 
+## Installation
+
+```bash
+pip install scitex-tunnel
+# Development:
+pip install -e /home/ywatanabe/proj/scitex-tunnel
+```
 
 ## Details
 
