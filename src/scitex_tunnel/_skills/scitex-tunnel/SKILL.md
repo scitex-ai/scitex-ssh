@@ -14,11 +14,9 @@ runtime; which one a user has depends on their install choice.
 ```python
 # Standalone — pip install scitex-tunnel
 import scitex_tunnel
-scitex_tunnel.setup(...)
 
 # Umbrella — pip install scitex
 import scitex.tunnel
-scitex.tunnel.setup(...)
 ```
 
 `pip install scitex-tunnel` alone does NOT expose the `scitex` namespace;
