@@ -21,6 +21,14 @@
 
 ---
 
+## Problem and Solution
+
+
+| # | Problem | Solution |
+|---|---------|----------|
+| 1 | **Lab machines are behind NAT** -- collaborator can't `ssh lab-box` from the conference | **Persistent reverse tunnel** -- `scitex-tunnel setup --port 8888 --bastion gw.example.com` installs an autossh systemd service; survives reboots + flaky networks |
+| 2 | **Manual `autossh` + systemd unit authoring is tedious** -- half the team never bothers | **One-line lifecycle** -- `setup` / `status` / `remove` commands handle the unit file, env vars, restart policy |
+
 ## Problem
 
 Machines behind NAT (Network Address Translation) or institutional firewalls cannot receive incoming SSH (Secure Shell) connections. Researchers running long experiments on lab workstations, HPC (High-Performance Computing) nodes, or edge devices need reliable remote access without manual port forwarding or VPN (Virtual Private Network) setup. Existing solutions (ngrok, cloudflared) often require external accounts or lack systemd integration for persistent, auto-recovering connections.
