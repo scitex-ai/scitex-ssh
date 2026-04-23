@@ -5,3 +5,7 @@
 | `tunnel_setup` | `port`, `bastion_server`, `secret_key_path` | Create persistent SSH tunnel |
 | `tunnel_status` | `port` (optional) | Check tunnel status |
 | `tunnel_remove` | `port` | Remove tunnel |
+
+Defaults for `bastion_server` and `secret_key_path` come from
+`SCITEX_TUNNEL_BASTION_SERVER` / `SCITEX_TUNNEL_SECRET_KEY_PATH` env vars
+when the parameters are omitted.
