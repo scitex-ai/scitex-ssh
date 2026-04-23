@@ -2,12 +2,18 @@
 description: Persistent, auto-reconnecting SSH reverse tunnels for NAT traversal — installs an `autossh` systemd unit on the local host so a bastion/relay server can SSH back in even through firewalls and dynamic IPs. Python API — `setup(port, bastion_server=, secret_key_path=)`, `remove(port)`, `status(port=None)`, `get_version()`. Defaults read from env vars `SCITEX_TUNNEL_BASTION_SERVER` and `SCITEX_TUNNEL_SECRET_KEY_PATH`. 3 MCP tools — `tunnel_setup`, `tunnel_remove`, `tunnel_status`. Bundled bash scripts (`setup-autossh-service.sh` / `remove-autossh-service.sh`) install/remove `autossh-tunnel-<port>.service` via systemctl. Drop-in replacement for hand-writing `autossh -M 0 -NR port:localhost:22 user@host` commands, crafting `/etc/systemd/system/autossh-tunnel-*.service` unit files by hand, `sshuttle`, and manual `ssh -R` plus `tmux` reconnect loops. Use whenever the user asks to "set up a reverse SSH tunnel", "keep SSH alive through NAT", "access a lab machine from outside", "tunnel through a bastion", "autossh systemd service", "check tunnel status", "remove a tunnel", "expose this machine via a jump host", or mentions bastion server, NAT traversal, autossh, reverse SSH, HPC login node.
 allowed-tools: mcp__scitex__tunnel_*
 primary_interface: cli
+interfaces:
+  python: 1
+  cli: 3
+  mcp: 2
+  skills: 2
+  hook: 0
+  http: 0
 ---
-
 
 # SSH Tunnels with scitex-tunnel
 
-> **Primary interface: CLI.** Reach for `scitex-tunnel setup` first. Python API + MCP wrap the same commands for scripting / agent use.
+> **Interfaces:** Python ⭐ · CLI ⭐⭐⭐ (primary) · MCP ⭐⭐ · Skills ⭐⭐ · Hook — · HTTP —
 
 ## Installation & import (two equivalent paths)
 
