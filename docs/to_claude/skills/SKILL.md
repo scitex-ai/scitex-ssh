@@ -5,6 +5,14 @@ description: Master index of all available skills for development workflows. Use
 
 # Skills Overview
 
+## Installation
+
+```bash
+pip install scitex-tunnel
+# Development:
+pip install -e /home/ywatanabe/proj/scitex-tunnel
+```
+
 Personal skills collection for software development, scientific computing, and project management.
 
 ## Available Skills

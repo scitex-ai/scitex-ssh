@@ -17,7 +17,7 @@ def create_server():
         bastion_server: str | None = None,
         secret_key_path: str | None = None,
     ) -> dict:
-        """Set up a persistent SSH reverse tunnel.
+        """Install an `autossh`-backed `autossh-tunnel-<port>.service` systemd unit that opens a reverse SSH tunnel (local → bastion:port) and auto-reconnects on drop. One call replaces writing the unit file, enabling it, starting it, and testing reconnect. Drop-in replacement for hand-crafted `autossh -M 0 -NR port:localhost:22 user@host`, `/etc/systemd/system/autossh-tunnel-*.service` files, `sshuttle`, and `tmux` + `ssh -R` reconnect loops. Use whenever the user asks to "set up a reverse tunnel", "expose this machine through a bastion", "open port X on the jump host", "autossh systemd service for port X", "make this NAT-ed box reachable", or mentions bastion, jump host, HPC login node, NAT traversal.
 
         Parameters
         ----------
@@ -41,7 +41,7 @@ def create_server():
 
     @mcp.tool()
     def tunnel_status(port: int | None = None) -> dict:
-        """Check status of SSH reverse tunnels.
+        """Report live state of autossh reverse-tunnel systemd units — active/inactive, PID, restart count, last journal lines — for one specific port or every installed tunnel. Drop-in replacement for `systemctl status autossh-tunnel-<port>.service` + `journalctl -u autossh-tunnel-*`. Use when the user asks "is my tunnel up?", "why can't I reach port 2222?", "list all reverse tunnels", "check tunnel health", or is debugging a dropped connection.
 
         Parameters
         ----------
@@ -59,7 +59,7 @@ def create_server():
 
     @mcp.tool()
     def tunnel_remove(port: int) -> dict:
-        """Remove a persistent SSH reverse tunnel.
+        """Tear down an autossh reverse-tunnel unit — stop + disable + delete `autossh-tunnel-<port>.service` + `systemctl daemon-reload`. Drop-in replacement for running `systemctl stop/disable` + `rm /etc/systemd/system/autossh-tunnel-<port>.service` + `daemon-reload` by hand. Use when the user asks to "remove the tunnel", "delete reverse tunnel on port X", "stop autossh", "decommission this tunnel", or is cleaning up old bastion routes.
 
         Parameters
         ----------
