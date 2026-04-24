@@ -114,7 +114,19 @@ def main(ctx, version, help_recursive):
 # -----------------------------------------------------------------------
 
 
-@main.command()
+@main.command("setup", hidden=True, context_settings={"ignore_unknown_options": True})
+@click.pass_context
+def setup_deprecated(ctx):
+    """(deprecated) Renamed to `setup-tunnel`."""
+    click.echo(
+        "error: `scitex-tunnel setup` was renamed to `scitex-tunnel setup-tunnel`.\n"
+        "Re-run with: scitex-tunnel setup-tunnel",
+        err=True,
+    )
+    ctx.exit(2)
+
+
+@main.command("setup-tunnel")
 @click.option("-p", "--port", required=True, type=int, help="Remote port to forward.")
 @click.option(
     "-b",
@@ -128,7 +140,7 @@ def main(ctx, version, help_recursive):
     default=None,
     help="Path to SSH private key. [env: SCITEX_TUNNEL_SECRET_KEY_PATH]",
 )
-def setup(port, bastion, secret_key):
+def setup_tunnel(port, bastion, secret_key):
     """Set up a persistent SSH reverse tunnel."""
     import scitex_tunnel
 
@@ -148,9 +160,21 @@ def setup(port, bastion, secret_key):
         raise SystemExit(1)
 
 
-@main.command()
+@main.command("remove", hidden=True, context_settings={"ignore_unknown_options": True})
+@click.pass_context
+def remove_deprecated(ctx):
+    """(deprecated) Renamed to `remove-tunnel`."""
+    click.echo(
+        "error: `scitex-tunnel remove` was renamed to `scitex-tunnel remove-tunnel`.\n"
+        "Re-run with: scitex-tunnel remove-tunnel",
+        err=True,
+    )
+    ctx.exit(2)
+
+
+@main.command("remove-tunnel")
 @click.option("-p", "--port", required=True, type=int, help="Port of tunnel to remove.")
-def remove(port):
+def remove_tunnel(port):
     """Remove a persistent SSH reverse tunnel."""
     import scitex_tunnel
 
@@ -166,7 +190,19 @@ def remove(port):
         raise SystemExit(1)
 
 
-@main.command()
+@main.command("status", hidden=True, context_settings={"ignore_unknown_options": True})
+@click.pass_context
+def status_deprecated(ctx):
+    """(deprecated) Renamed to `show-status`."""
+    click.echo(
+        "error: `scitex-tunnel status` was renamed to `scitex-tunnel show-status`.\n"
+        "Re-run with: scitex-tunnel show-status",
+        err=True,
+    )
+    ctx.exit(2)
+
+
+@main.command("show-status")
 @click.option(
     "-p",
     "--port",
@@ -174,7 +210,7 @@ def remove(port):
     default=None,
     help="Specific port to check (default: all).",
 )
-def status(port):
+def show_status(port):
     """Check status of SSH reverse tunnels."""
     import scitex_tunnel
 
