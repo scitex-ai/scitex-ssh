@@ -1,5 +1,16 @@
 # SciTeX Tunnel (<code>scitex-tunnel</code>)
 
+<!-- scitex-badges:start -->
+[![PyPI](https://img.shields.io/pypi/v/scitex-tunnel.svg)](https://pypi.org/project/scitex-tunnel/)
+[![Python](https://img.shields.io/pypi/pyversions/scitex-tunnel.svg)](https://pypi.org/project/scitex-tunnel/)
+[![Tests](https://github.com/ywatanabe1989/scitex-tunnel/actions/workflows/test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-tunnel/actions/workflows/test.yml)
+[![Install Test](https://github.com/ywatanabe1989/scitex-tunnel/actions/workflows/install-test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-tunnel/actions/workflows/install-test.yml)
+[![Coverage](https://codecov.io/gh/ywatanabe1989/scitex-tunnel/graph/badge.svg)](https://codecov.io/gh/ywatanabe1989/scitex-tunnel)
+[![Docs](https://readthedocs.org/projects/scitex-tunnel/badge/?version=latest)](https://scitex-tunnel.readthedocs.io/en/latest/)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+<!-- scitex-badges:end -->
+
+
 <p align="center">
   <a href="https://scitex.ai">
     <img src="docs/scitex-logo-blue-cropped.png" alt="SciTeX" width="400">
@@ -20,6 +31,8 @@
 </p>
 
 ---
+
+> **Interfaces:** Python ⭐ · CLI ⭐⭐⭐ (primary) · MCP ⭐⭐ · Skills ⭐⭐ · Hook — · HTTP —
 
 ## Problem and Solution
 
