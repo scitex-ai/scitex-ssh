@@ -48,7 +48,7 @@ class TestCLI:
 
     def test_setup_help(self):
         runner = CliRunner()
-        result = runner.invoke(main, ["setup", "--help"])
+        result = runner.invoke(main, ["setup-tunnel", "--help"])
         assert result.exit_code == 0
         assert "--port" in result.output
         assert "--bastion" in result.output
@@ -56,13 +56,13 @@ class TestCLI:
 
     def test_remove_help(self):
         runner = CliRunner()
-        result = runner.invoke(main, ["remove", "--help"])
+        result = runner.invoke(main, ["remove-tunnel", "--help"])
         assert result.exit_code == 0
         assert "--port" in result.output
 
     def test_status_help(self):
         runner = CliRunner()
-        result = runner.invoke(main, ["status", "--help"])
+        result = runner.invoke(main, ["show-status", "--help"])
         assert result.exit_code == 0
         assert "--port" in result.output
 
@@ -74,7 +74,7 @@ class TestCLI:
             "stderr": "",
         }
         runner = CliRunner()
-        result = runner.invoke(main, ["status"])
+        result = runner.invoke(main, ["show-status"])
         assert result.exit_code == 0
         assert "active tunnels" in result.output
 
@@ -86,7 +86,7 @@ class TestCLI:
             "stderr": "some error",
         }
         runner = CliRunner()
-        result = runner.invoke(main, ["status"])
+        result = runner.invoke(main, ["show-status"])
         assert result.exit_code == 0
 
     @patch("scitex_tunnel.setup")
@@ -98,7 +98,8 @@ class TestCLI:
         }
         runner = CliRunner()
         result = runner.invoke(
-            main, ["setup", "-p", "2222", "-b", "user@host", "-s", "/dev/null"]
+            main,
+            ["setup-tunnel", "-p", "2222", "-b", "user@host", "-s", "/dev/null"],
         )
         assert result.exit_code == 0
         assert "successfully" in result.output
@@ -112,7 +113,8 @@ class TestCLI:
         }
         runner = CliRunner()
         result = runner.invoke(
-            main, ["setup", "-p", "2222", "-b", "user@host", "-s", "/dev/null"]
+            main,
+            ["setup-tunnel", "-p", "2222", "-b", "user@host", "-s", "/dev/null"],
         )
         assert result.exit_code != 0
 
@@ -124,7 +126,7 @@ class TestCLI:
             "stderr": "",
         }
         runner = CliRunner()
-        result = runner.invoke(main, ["remove", "-p", "2222"])
+        result = runner.invoke(main, ["remove-tunnel", "-p", "2222"])
         assert result.exit_code == 0
         assert "removed" in result.output.lower()
 
@@ -136,17 +138,17 @@ class TestCLI:
             "stderr": "not found",
         }
         runner = CliRunner()
-        result = runner.invoke(main, ["remove", "-p", "2222"])
+        result = runner.invoke(main, ["remove-tunnel", "-p", "2222"])
         assert result.exit_code != 0
 
     def test_setup_missing_required(self):
         runner = CliRunner()
-        result = runner.invoke(main, ["setup"])
+        result = runner.invoke(main, ["setup-tunnel"])
         assert result.exit_code != 0
 
     def test_remove_missing_required(self):
         runner = CliRunner()
-        result = runner.invoke(main, ["remove"])
+        result = runner.invoke(main, ["remove-tunnel"])
         assert result.exit_code != 0
 
 
@@ -212,8 +214,8 @@ class TestMCPCli:
 
     def test_mcp_installation(self):
         runner = CliRunner()
-        result = runner.invoke(main, ["mcp", "installation"])
-        assert result.exit_code == 0
+        result = runner.invoke(main, ["mcp", "show-installation"])
+        assert result.exit_code == 0, result.output
         assert "pip install scitex-tunnel[mcp]" in result.output
         assert "mcpServers" in result.output
 
@@ -221,7 +223,7 @@ class TestMCPCli:
     def test_setup_env_var_fallback_error(self, mock_setup):
         mock_setup.side_effect = ValueError("bastion_server is required")
         runner = CliRunner()
-        result = runner.invoke(main, ["setup", "-p", "2222"])
+        result = runner.invoke(main, ["setup-tunnel", "-p", "2222"])
         assert result.exit_code != 0
         assert "bastion_server is required" in result.output
 
