@@ -36,13 +36,13 @@ classifiers = [
 dependencies = ["click>=8.0.0"]
 
 [project.optional-dependencies]
+mcp = [
+    "fastmcp>=2.0.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "scitex_dev",
-]
-mcp = [
-    "fastmcp>=2.0.0",
 ]
 docs = [
     "sphinx>=7.0",
@@ -52,15 +52,7 @@ docs = [
     "sphinx-autodoc-typehints>=1.25",
 ]
 all = [
-    "click>=8.0.0",
-    "fastmcp>=2.0.0",
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "sphinx>=7.0",
-    "sphinx-rtd-theme>=2.0",
-    "myst-parser>=2.0",
-    "sphinx-copybutton>=0.5",
-    "sphinx-autodoc-typehints>=1.25",
+    "scitex-tunnel[mcp]",
 ]
 
 [project.scripts]
