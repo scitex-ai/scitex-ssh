@@ -76,3 +76,6 @@ packages = ["src/scitex_tunnel"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.scitex-linter]
+library_dirs = ["src", "tests", "examples"]
