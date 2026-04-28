@@ -1,7 +1,7 @@
-scitex_tunnel
+scitex_ssh
 =============
 
-.. automodule:: scitex_tunnel
+.. automodule:: scitex_ssh
    :members:
    :undoc-members:
    :show-inheritance:

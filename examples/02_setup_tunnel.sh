@@ -32,10 +32,10 @@ if [ -z "${PORT:-}" ] || [ -z "${BASTION:-}" ] || [ -z "${KEY_PATH:-}" ]; then
 fi
 
 echo "=== Setting up tunnel on port $PORT ==="
-scitex-tunnel setup -p "$PORT" -b "$BASTION" -s "$KEY_PATH"
+scitex-ssh setup -p "$PORT" -b "$BASTION" -s "$KEY_PATH"
 
 echo ""
 echo "=== Verifying ==="
-scitex-tunnel status -p "$PORT"
+scitex-ssh status -p "$PORT"
 
 # EOF

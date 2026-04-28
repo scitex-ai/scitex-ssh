@@ -28,10 +28,10 @@ if [ -z "${PORT:-}" ]; then
 fi
 
 echo "=== Removing tunnel on port $PORT ==="
-scitex-tunnel remove -p "$PORT"
+scitex-ssh remove -p "$PORT"
 
 echo ""
 echo "=== Verifying ==="
-scitex-tunnel status || echo "No active tunnels."
+scitex-ssh status || echo "No active tunnels."
 
 # EOF

@@ -1,4 +1,4 @@
-# Contributing to SciTeX Tunnel
+# Contributing to SciTeX SSH
 
 Thank you for your interest in contributing to SciTeX. This guide covers the
 process for reporting issues, suggesting features, and submitting code.
@@ -18,7 +18,7 @@ See [CLA.md](CLA.md) for full details.
 
 - Search existing issues before opening a new one.
 - Include a minimal reproducible example when reporting bugs.
-- Specify your Python version, OS, and scitex-tunnel version.
+- Specify your Python version, OS, and scitex-ssh version.
 
 ## Development Setup
 

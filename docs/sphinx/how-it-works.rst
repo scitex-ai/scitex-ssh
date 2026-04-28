@@ -1,7 +1,7 @@
 How It Works
 ============
 
-This page explains the architecture and internals of SciTeX Tunnel.
+This page explains the architecture and internals of SciTeX SSH.
 
 .. warning::
 
@@ -69,7 +69,7 @@ Persistence via systemd and autossh
 ------------------------------------
 
 A plain ``ssh -R`` tunnel breaks when the network drops or the machine reboots.
-SciTeX Tunnel solves this with two layers of persistence:
+SciTeX SSH solves this with two layers of persistence:
 
 **Layer 1: autossh (connection-level persistence)**
 
@@ -89,7 +89,7 @@ Each tunnel is registered as a systemd service unit. This provides:
 The Service File
 ~~~~~~~~~~~~~~~~
 
-When you run ``scitex-tunnel setup -p 2222 -b user@bastion -s ~/.ssh/id_rsa``,
+When you run ``scitex-ssh setup -p 2222 -b user@bastion -s ~/.ssh/id_rsa``,
 the following systemd unit file is created:
 
 **File**: ``/etc/systemd/system/autossh-tunnel-2222.service``
@@ -145,8 +145,8 @@ The Three Operations
 
 Each operation is available through all three interfaces:
 
-- **Python**: ``scitex_tunnel.setup()``, ``scitex_tunnel.status()``, ``scitex_tunnel.remove()``
-- **CLI**: ``scitex-tunnel setup``, ``scitex-tunnel status``, ``scitex-tunnel remove``
+- **Python**: ``scitex_ssh.setup()``, ``scitex_ssh.status()``, ``scitex_ssh.remove()``
+- **CLI**: ``scitex-ssh setup``, ``scitex-ssh status``, ``scitex-ssh remove``
 - **MCP**: ``tunnel_setup``, ``tunnel_status``, ``tunnel_remove`` tools
 
 Environment Variables
@@ -162,13 +162,13 @@ environment variables:
    * - Variable
      - Description
      - Example
-   * - ``SCITEX_TUNNEL_BASTION_SERVER``
+   * - ``SCITEX_SSH_BASTION_SERVER``
      - Default bastion server address
      - ``user@bastion.example.com``
-   * - ``SCITEX_TUNNEL_SECRET_KEY_PATH``
+   * - ``SCITEX_SSH_SECRET_KEY_PATH``
      - Default SSH private key path
      - ``~/.ssh/id_rsa``
-   * - ``SCITEX_TUNNEL_DEBUG_MODE``
+   * - ``SCITEX_SSH_DEBUG_MODE``
      - Enable verbose logging (``1``)
      - ``0``
 
@@ -309,9 +309,9 @@ If you have sudo access but prefer not to install Python, use the shell scripts 
 
     # Download the scripts (one-time)
     curl -o ~/.local/bin/setup-autossh-service.sh \
-      https://raw.githubusercontent.com/ywatanabe1989/scitex-tunnel/main/src/scitex_tunnel/scripts/setup-autossh-service.sh
+      https://raw.githubusercontent.com/ywatanabe1989/scitex-ssh/main/src/scitex_ssh/scripts/setup-autossh-service.sh
     curl -o ~/.local/bin/remove-autossh-service.sh \
-      https://raw.githubusercontent.com/ywatanabe1989/scitex-tunnel/main/src/scitex_tunnel/scripts/remove-autossh-service.sh
+      https://raw.githubusercontent.com/ywatanabe1989/scitex-ssh/main/src/scitex_ssh/scripts/remove-autossh-service.sh
     chmod +x ~/.local/bin/setup-autossh-service.sh ~/.local/bin/remove-autossh-service.sh
 
     # Usage (requires sudo for systemd operations)
