@@ -1,18 +1,18 @@
-"""Sphinx configuration for SciTeX Tunnel documentation."""
+"""Sphinx configuration for SciTeX SSH documentation."""
 
 import os
 import sys
 
 sys.path.insert(0, os.path.abspath("../../src"))
 
-project = "SciTeX Tunnel"
+project = "SciTeX SSH"
 copyright = "2024-2026, Yusuke Watanabe"
 author = "Yusuke Watanabe"
 
 try:
     from importlib.metadata import version as _get_version
 
-    release = _get_version("scitex-tunnel")
+    release = _get_version("scitex-ssh")
 except Exception:
     release = "0.0.0"
 
@@ -68,7 +68,7 @@ html_short_title = project
 html_context = {
     "display_github": True,
     "github_user": "ywatanabe1989",
-    "github_repo": "scitex-tunnel",
+    "github_repo": "scitex-ssh",
     "github_version": "main",
     "conf_py_path": "/docs/sphinx/",
 }

@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 
 try:
-    from scitex_tunnel._mcp._server import create_server
+    from scitex_ssh._mcp._server import create_server
 
     HAS_FASTMCP = True
 except ImportError:
@@ -21,13 +21,13 @@ class TestCreateServer:
     def test_create_server_returns_fastmcp(self):
         server = create_server()
         assert server is not None
-        assert server.name == "scitex-tunnel"
+        assert server.name == "scitex-ssh"
 
 
 class TestMCPTools:
     """MCP tool delegation tests."""
 
-    @patch("scitex_tunnel.setup")
+    @patch("scitex_ssh.setup")
     def test_tunnel_setup_delegates(self, mock_setup):
         mock_setup.return_value = {
             "success": True,
@@ -47,7 +47,7 @@ class TestMCPTools:
         mock_setup.assert_called_once_with(2222, "user@host", "/dev/null")
         assert result["success"] is True
 
-    @patch("scitex_tunnel.status")
+    @patch("scitex_ssh.status")
     def test_tunnel_status_delegates(self, mock_status):
         mock_status.return_value = {
             "success": True,
@@ -65,7 +65,7 @@ class TestMCPTools:
         mock_status.assert_called_once_with(None)
         assert result["success"] is True
 
-    @patch("scitex_tunnel.status")
+    @patch("scitex_ssh.status")
     def test_tunnel_status_with_port(self, mock_status):
         mock_status.return_value = {
             "success": True,
@@ -81,7 +81,7 @@ class TestMCPTools:
         result = tool_fn(port=2222)
         mock_status.assert_called_once_with(2222)
 
-    @patch("scitex_tunnel.remove")
+    @patch("scitex_ssh.remove")
     def test_tunnel_remove_delegates(self, mock_remove):
         mock_remove.return_value = {
             "success": True,

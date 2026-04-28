@@ -2,20 +2,20 @@
 
 ```bash
 # Setup a tunnel (port 22 exposed via bastion)
-scitex-tunnel setup --port 22 --bastion jump.example.com --secret-key ~/.ssh/id_rsa
+scitex-ssh setup --port 22 --bastion jump.example.com --secret-key ~/.ssh/id_rsa
 
 # Check status
-scitex-tunnel status
+scitex-ssh status
 
 # Check specific port
-scitex-tunnel status --port 22
+scitex-ssh status --port 22
 
 # Remove tunnel
-scitex-tunnel remove --port 22
+scitex-ssh remove --port 22
 ```
 
 ```python
-from scitex_tunnel import setup, status, remove
+from scitex_ssh import setup, status, remove
 
 # Create tunnel
 result = setup(port=22, bastion_server="jump.example.com", secret_key_path="~/.ssh/id_rsa")
@@ -31,7 +31,7 @@ result = status(port=22)
 result = remove(port=22)
 
 # Check availability
-from scitex_tunnel import AVAILABLE, get_version
+from scitex_ssh import AVAILABLE, get_version
 print(AVAILABLE)       # True/False
 print(get_version())   # "0.x.y"
 ```

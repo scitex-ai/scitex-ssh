@@ -1,9 +1,9 @@
-.. SciTeX Tunnel documentation master file
+.. SciTeX SSH documentation master file
 
-SciTeX Tunnel - Persistent SSH (Secure Shell) Reverse Tunnel
+SciTeX SSH - Persistent SSH (Secure Shell) Reverse Tunnel
 =============================================================
 
-**SciTeX Tunnel** manages persistent SSH (Secure Shell) reverse tunnels for NAT (Network Address Translation) traversal, powered by autossh and systemd. It provides three interfaces: Python API (Application Programming Interface), CLI (Command-Line Interface), and MCP (Model Context Protocol) server for AI agents.
+**SciTeX SSH** manages persistent SSH (Secure Shell) reverse tunnels for NAT (Network Address Translation) traversal, powered by autossh and systemd. It provides three interfaces: Python API (Application Programming Interface), CLI (Command-Line Interface), and MCP (Model Context Protocol) server for AI agents.
 
 .. toctree::
    :maxdepth: 2
@@ -22,7 +22,7 @@ SciTeX Tunnel - Persistent SSH (Secure Shell) Reverse Tunnel
    :maxdepth: 2
    :caption: API Reference
 
-   api/scitex_tunnel
+   api/scitex_ssh
 
 Key Features
 ------------
@@ -31,7 +31,7 @@ Key Features
 - **systemd Integration**: Each tunnel runs as a managed systemd service that survives reboots
 - **Three Interfaces**: Python API, CLI, and MCP server for AI agents
 - **Simple API**: Three operations — setup, status, remove
-- **Environment Variables**: Configure defaults via ``SCITEX_TUNNEL_*`` environment variables
+- **Environment Variables**: Configure defaults via ``SCITEX_SSH_*`` environment variables
 
 Architecture Overview
 ---------------------
@@ -60,24 +60,24 @@ Python API:
 
 .. code-block:: python
 
-    import scitex_tunnel
+    import scitex_ssh
 
     # Set up a tunnel
-    result = scitex_tunnel.setup(2222, "user@bastion.example.com", "~/.ssh/id_rsa")
+    result = scitex_ssh.setup(2222, "user@bastion.example.com", "~/.ssh/id_rsa")
 
     # Check status
-    result = scitex_tunnel.status()
+    result = scitex_ssh.status()
 
     # Remove
-    result = scitex_tunnel.remove(2222)
+    result = scitex_ssh.remove(2222)
 
 CLI:
 
 .. code-block:: bash
 
-    scitex-tunnel setup -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
-    scitex-tunnel status
-    scitex-tunnel remove -p 2222
+    scitex-ssh setup -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
+    scitex-ssh status
+    scitex-ssh remove -p 2222
 
 Indices and tables
 ==================

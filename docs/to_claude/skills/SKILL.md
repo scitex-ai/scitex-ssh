@@ -8,9 +8,9 @@ description: Master index of all available skills for development workflows. Use
 ## Installation
 
 ```bash
-pip install scitex-tunnel
+pip install scitex-ssh
 # Development:
-pip install -e /home/ywatanabe/proj/scitex-tunnel
+pip install -e /home/ywatanabe/proj/scitex-ssh
 ```
 
 Personal skills collection for software development, scientific computing, and project management.

@@ -6,7 +6,7 @@ From PyPI (Python Package Index)
 
 .. code-block:: bash
 
-    pip install scitex-tunnel
+    pip install scitex-ssh
 
 Or as part of SciTeX:
 

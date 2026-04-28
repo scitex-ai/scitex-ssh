@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MCP CLI subcommands for scitex-tunnel."""
+"""MCP CLI subcommands for scitex-ssh."""
 
 import click
 
@@ -13,13 +13,13 @@ def mcp():
 def start():
     """Start the MCP server."""
     try:
-        from scitex_tunnel._mcp._server import create_server
+        from scitex_ssh._mcp._server import create_server
 
         server = create_server()
         server.run()
     except ImportError:
         click.secho(
-            "ERROR: fastmcp is not installed. Install with: pip install scitex-tunnel[mcp]",
+            "ERROR: fastmcp is not installed. Install with: pip install scitex-ssh[mcp]",
             fg="red",
             err=True,
         )
@@ -37,7 +37,7 @@ def doctor():
         click.secho("  fastmcp: installed", fg="green")
     except ImportError:
         click.secho("  fastmcp: NOT installed", fg="red")
-        issues.append("pip install scitex-tunnel[mcp]")
+        issues.append("pip install scitex-ssh[mcp]")
 
     import shutil
 
@@ -64,9 +64,9 @@ def doctor():
 def installation_deprecated(ctx):
     """(deprecated) Renamed to `show-installation`."""
     click.echo(
-        "error: `scitex-tunnel mcp installation` was renamed to "
-        "`scitex-tunnel mcp show-installation`.\n"
-        "Re-run with: scitex-tunnel mcp show-installation",
+        "error: `scitex-ssh mcp installation` was renamed to "
+        "`scitex-ssh mcp show-installation`.\n"
+        "Re-run with: scitex-ssh mcp show-installation",
         err=True,
     )
     ctx.exit(2)
@@ -75,16 +75,16 @@ def installation_deprecated(ctx):
 @mcp.command("show-installation")
 def show_installation():
     """Show MCP server installation instructions."""
-    click.echo("Install scitex-tunnel with MCP support:")
+    click.echo("Install scitex-ssh with MCP support:")
     click.echo()
-    click.echo("  pip install scitex-tunnel[mcp]")
+    click.echo("  pip install scitex-ssh[mcp]")
     click.echo()
     click.echo("Add to your Claude Code MCP config:")
     click.echo()
     click.echo("  {")
     click.echo('    "mcpServers": {')
-    click.echo('      "scitex-tunnel": {')
-    click.echo('        "command": "scitex-tunnel",')
+    click.echo('      "scitex-ssh": {')
+    click.echo('        "command": "scitex-ssh",')
     click.echo('        "args": ["mcp", "start"]')
     click.echo("      }")
     click.echo("    }")
@@ -105,7 +105,7 @@ def list_tools(verbose):
         ("tunnel_remove", "Remove a persistent SSH reverse tunnel", "port"),
     ]
 
-    click.echo("scitex-tunnel MCP tools:")
+    click.echo("scitex-ssh MCP tools:")
     click.echo()
     for name, desc, params in tools:
         if verbose >= 2:

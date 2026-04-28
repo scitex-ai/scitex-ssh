@@ -1,12 +1,12 @@
-# SciTeX Tunnel (<code>scitex-tunnel</code>)
+# SciTeX SSH (<code>scitex-ssh</code>)
 
 <!-- scitex-badges:start -->
-[![PyPI](https://img.shields.io/pypi/v/scitex-tunnel.svg)](https://pypi.org/project/scitex-tunnel/)
-[![Python](https://img.shields.io/pypi/pyversions/scitex-tunnel.svg)](https://pypi.org/project/scitex-tunnel/)
-[![Tests](https://github.com/ywatanabe1989/scitex-tunnel/actions/workflows/test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-tunnel/actions/workflows/test.yml)
-[![Install Test](https://github.com/ywatanabe1989/scitex-tunnel/actions/workflows/install-test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-tunnel/actions/workflows/install-test.yml)
-[![Coverage](https://codecov.io/gh/ywatanabe1989/scitex-tunnel/graph/badge.svg)](https://codecov.io/gh/ywatanabe1989/scitex-tunnel)
-[![Docs](https://readthedocs.org/projects/scitex-tunnel/badge/?version=latest)](https://scitex-tunnel.readthedocs.io/en/latest/)
+[![PyPI](https://img.shields.io/pypi/v/scitex-ssh.svg)](https://pypi.org/project/scitex-ssh/)
+[![Python](https://img.shields.io/pypi/pyversions/scitex-ssh.svg)](https://pypi.org/project/scitex-ssh/)
+[![Tests](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/test.yml)
+[![Install Test](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/install-test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/install-test.yml)
+[![Coverage](https://codecov.io/gh/ywatanabe1989/scitex-ssh/graph/badge.svg)](https://codecov.io/gh/ywatanabe1989/scitex-ssh)
+[![Docs](https://readthedocs.org/projects/scitex-ssh/badge/?version=latest)](https://scitex-ssh.readthedocs.io/en/latest/)
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 <!-- scitex-badges:end -->
 
@@ -20,14 +20,14 @@
 <p align="center"><b>Persistent SSH (Secure Shell) reverse tunnel for NAT (Network Address Translation) traversal</b></p>
 
 <p align="center">
-  <a href="https://badge.fury.io/py/scitex-tunnel"><img src="https://badge.fury.io/py/scitex-tunnel.svg" alt="PyPI version"></a>
-  <a href="https://scitex-tunnel.readthedocs.io/"><img src="https://readthedocs.org/projects/scitex-tunnel/badge/?version=latest" alt="Documentation"></a>
-  <a href="https://github.com/ywatanabe1989/scitex-tunnel/actions/workflows/ci.yml"><img src="https://github.com/ywatanabe1989/scitex-tunnel/actions/workflows/ci.yml/badge.svg" alt="Tests"></a>
+  <a href="https://badge.fury.io/py/scitex-ssh"><img src="https://badge.fury.io/py/scitex-ssh.svg" alt="PyPI version"></a>
+  <a href="https://scitex-ssh.readthedocs.io/"><img src="https://readthedocs.org/projects/scitex-ssh/badge/?version=latest" alt="Documentation"></a>
+  <a href="https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/ci.yml"><img src="https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/ci.yml/badge.svg" alt="Tests"></a>
   <a href="https://www.gnu.org/licenses/agpl-3.0"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg" alt="License: AGPL-3.0"></a>
 </p>
 
 <p align="center">
-  <a href="https://scitex-tunnel.readthedocs.io/">Full Documentation</a> · <code>pip install scitex-tunnel</code>
+  <a href="https://scitex-ssh.readthedocs.io/">Full Documentation</a> · <code>pip install scitex-ssh</code>
 </p>
 
 ---
@@ -39,7 +39,7 @@
 
 | # | Problem | Solution |
 |---|---------|----------|
-| 1 | **Lab machines are behind NAT** -- collaborator can't `ssh lab-box` from the conference | **Persistent reverse tunnel** -- `scitex-tunnel setup --port 8888 --bastion gw.example.com` installs an autossh systemd service; survives reboots + flaky networks |
+| 1 | **Lab machines are behind NAT** -- collaborator can't `ssh lab-box` from the conference | **Persistent reverse tunnel** -- `scitex-ssh setup --port 8888 --bastion gw.example.com` installs an autossh systemd service; survives reboots + flaky networks |
 | 2 | **Manual `autossh` + systemd unit authoring is tedious** -- half the team never bothers | **One-line lifecycle** -- `setup` / `status` / `remove` commands handle the unit file, env vars, restart policy |
 
 ## Problem
@@ -48,7 +48,7 @@ Machines behind NAT (Network Address Translation) or institutional firewalls can
 
 ## Solution
 
-SciTeX Tunnel creates **persistent reverse SSH tunnels** using autossh and systemd. Each tunnel runs as a managed service that auto-restarts on failure, survives reboots, and requires only a bastion server with SSH access.
+SciTeX SSH creates **persistent reverse SSH tunnels** using autossh and systemd. Each tunnel runs as a managed service that auto-restarts on failure, survives reboots, and requires only a bastion server with SSH access.
 
 ```
 ┌─────────────────────────────────────────┐     ┌──────────────────────┐     ┌──────────────────┐
@@ -92,7 +92,7 @@ SciTeX Tunnel creates **persistent reverse SSH tunnels** using autossh and syste
 Requires `autossh` on the host machine (`sudo apt install autossh`).
 
 ```bash
-pip install scitex-tunnel
+pip install scitex-ssh
 ```
 
 > **SciTeX users**: `pip install scitex` already includes tunnel support.
@@ -177,9 +177,9 @@ If you have sudo access but prefer not to install Python, use the shell scripts 
 ```bash
 # Download the scripts (one-time)
 curl -o ~/.local/bin/setup-autossh-service.sh \
-  https://raw.githubusercontent.com/ywatanabe1989/scitex-tunnel/main/src/scitex_tunnel/scripts/setup-autossh-service.sh
+  https://raw.githubusercontent.com/ywatanabe1989/scitex-ssh/main/src/scitex_ssh/scripts/setup-autossh-service.sh
 curl -o ~/.local/bin/remove-autossh-service.sh \
-  https://raw.githubusercontent.com/ywatanabe1989/scitex-tunnel/main/src/scitex_tunnel/scripts/remove-autossh-service.sh
+  https://raw.githubusercontent.com/ywatanabe1989/scitex-ssh/main/src/scitex_ssh/scripts/remove-autossh-service.sh
 chmod +x ~/.local/bin/setup-autossh-service.sh ~/.local/bin/remove-autossh-service.sh
 
 # Usage (requires sudo)
@@ -193,13 +193,13 @@ remove-autossh-service.sh -p 2222
 
 ```bash
 # Set up a persistent reverse tunnel
-scitex-tunnel setup -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
+scitex-ssh setup -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
 
 # Check tunnel status
-scitex-tunnel status
+scitex-ssh status
 
 # Remove a tunnel
-scitex-tunnel remove -p 2222
+scitex-ssh remove -p 2222
 ```
 
 ## Three Interfaces
@@ -210,20 +210,20 @@ scitex-tunnel remove -p 2222
 <br>
 
 ```python
-import scitex_tunnel
+import scitex_ssh
 
 # Set up tunnel
-result = scitex_tunnel.setup(2222, "user@bastion.example.com", "~/.ssh/id_rsa")
+result = scitex_ssh.setup(2222, "user@bastion.example.com", "~/.ssh/id_rsa")
 
 # Check status
-result = scitex_tunnel.status()
-result = scitex_tunnel.status(port=2222)
+result = scitex_ssh.status()
+result = scitex_ssh.status(port=2222)
 
 # Remove tunnel
-result = scitex_tunnel.remove(2222)
+result = scitex_ssh.remove(2222)
 ```
 
-> **[Full API reference](https://scitex-tunnel.readthedocs.io/)**
+> **[Full API reference](https://scitex-ssh.readthedocs.io/)**
 
 </details>
 
@@ -233,16 +233,16 @@ result = scitex_tunnel.remove(2222)
 <br>
 
 ```bash
-scitex-tunnel --help-recursive                # Show all commands
-scitex-tunnel setup -p 2222 -b user@host -s ~/.ssh/id_rsa
-scitex-tunnel status                          # All tunnels
-scitex-tunnel status -p 2222                  # Specific port
-scitex-tunnel remove -p 2222                  # Remove tunnel
-scitex-tunnel list-python-apis                # List Python APIs
-scitex-tunnel mcp list-tools                  # List MCP (Model Context Protocol) tools
+scitex-ssh --help-recursive                # Show all commands
+scitex-ssh setup -p 2222 -b user@host -s ~/.ssh/id_rsa
+scitex-ssh status                          # All tunnels
+scitex-ssh status -p 2222                  # Specific port
+scitex-ssh remove -p 2222                  # Remove tunnel
+scitex-ssh list-python-apis                # List Python APIs
+scitex-ssh mcp list-tools                  # List MCP (Model Context Protocol) tools
 ```
 
-> **[Full CLI reference](https://scitex-tunnel.readthedocs.io/)**
+> **[Full CLI reference](https://scitex-ssh.readthedocs.io/)**
 
 </details>
 
@@ -262,10 +262,10 @@ AI agents can manage tunnels autonomously.
 <sub><b>Table 2.</b> Three MCP tools. All tools accept JSON (JavaScript Object Notation) parameters and return JSON results.</sub>
 
 ```bash
-scitex-tunnel mcp start
+scitex-ssh mcp start
 ```
 
-> **[Full MCP specification](https://scitex-tunnel.readthedocs.io/)**
+> **[Full MCP specification](https://scitex-ssh.readthedocs.io/)**
 
 </details>
 
@@ -273,20 +273,20 @@ scitex-tunnel mcp start
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `SCITEX_TUNNEL_BASTION_SERVER` | Default bastion server | `user@bastion.example.com` |
-| `SCITEX_TUNNEL_SECRET_KEY_PATH` | Default SSH (Secure Shell) private key path | `~/.ssh/id_rsa` |
-| `SCITEX_TUNNEL_DEBUG_MODE` | Enable verbose output (`1`) | `0` |
+| `SCITEX_SSH_BASTION_SERVER` | Default bastion server | `user@bastion.example.com` |
+| `SCITEX_SSH_SECRET_KEY_PATH` | Default SSH (Secure Shell) private key path | `~/.ssh/id_rsa` |
+| `SCITEX_SSH_DEBUG_MODE` | Enable verbose output (`1`) | `0` |
 
 <p align="center"><sub><b>Table 3.</b> Environment variables. CLI flags take precedence when provided.</sub></p>
 
 Set these in `.env` or your shell profile to avoid repeating `-b` and `-s` flags:
 
 ```bash
-export SCITEX_TUNNEL_BASTION_SERVER=user@bastion.example.com
-export SCITEX_TUNNEL_SECRET_KEY_PATH=~/.ssh/id_rsa
+export SCITEX_SSH_BASTION_SERVER=user@bastion.example.com
+export SCITEX_SSH_SECRET_KEY_PATH=~/.ssh/id_rsa
 
 # Now just specify the port
-scitex-tunnel setup -p 2222
+scitex-ssh setup -p 2222
 ```
 
 ## Part of SciTeX
