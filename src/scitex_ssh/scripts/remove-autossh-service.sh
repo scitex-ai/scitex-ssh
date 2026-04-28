@@ -21,7 +21,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Parameters
-LOG_PATH="/tmp/scitex-tunnel-remove-$(date +%s).log"
+LOG_PATH="/tmp/scitex-ssh-remove-$(date +%s).log"
 
 # Functions
 main() {

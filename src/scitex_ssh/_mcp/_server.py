@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MCP server for scitex-tunnel.
+"""MCP server for scitex-ssh.
 
 All tools delegate to the Python API (which delegates to shell scripts).
 """
@@ -9,7 +9,7 @@ from fastmcp import FastMCP
 
 def create_server():
     """Create and configure the MCP server."""
-    mcp = FastMCP("scitex-tunnel")
+    mcp = FastMCP("scitex-ssh")
 
     @mcp.tool()
     def tunnel_setup(
@@ -25,19 +25,19 @@ def create_server():
             The remote port to forward (e.g. 2222).
         bastion_server : str, optional
             The bastion/relay server (e.g. user@bastion.example.com).
-            Falls back to SCITEX_TUNNEL_BASTION_SERVER env var.
+            Falls back to SCITEX_SSH_BASTION_SERVER env var.
         secret_key_path : str, optional
             Path to the SSH private key.
-            Falls back to SCITEX_TUNNEL_SECRET_KEY_PATH env var.
+            Falls back to SCITEX_SSH_SECRET_KEY_PATH env var.
 
         Returns
         -------
         dict
             Result with success, stdout, stderr keys.
         """
-        import scitex_tunnel
+        import scitex_ssh
 
-        return scitex_tunnel.setup(port, bastion_server, secret_key_path)
+        return scitex_ssh.setup(port, bastion_server, secret_key_path)
 
     @mcp.tool()
     def tunnel_status(port: int | None = None) -> dict:
@@ -53,9 +53,9 @@ def create_server():
         dict
             Result with success, stdout, stderr keys.
         """
-        import scitex_tunnel
+        import scitex_ssh
 
-        return scitex_tunnel.status(port)
+        return scitex_ssh.status(port)
 
     @mcp.tool()
     def tunnel_remove(port: int) -> dict:
@@ -71,9 +71,9 @@ def create_server():
         dict
             Result with success, stdout, stderr keys.
         """
-        import scitex_tunnel
+        import scitex_ssh
 
-        return scitex_tunnel.remove(port)
+        return scitex_ssh.remove(port)
 
     return mcp
 

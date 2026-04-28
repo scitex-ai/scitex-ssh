@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Tests for scitex-tunnel CLI."""
+"""Tests for scitex-ssh CLI."""
 
 from unittest.mock import patch
 
 from click.testing import CliRunner
 
-from scitex_tunnel.cli import main
+from scitex_ssh.cli import main
 
 
 class TestCLI:
@@ -15,21 +15,22 @@ class TestCLI:
         runner = CliRunner()
         result = runner.invoke(main, ["--help"])
         assert result.exit_code == 0
-        assert "setup" in result.output
-        assert "remove" in result.output
-        assert "status" in result.output
+        assert "tunnel" in result.output
+        assert "exec" in result.output
+        assert "copy" in result.output
+        assert "attach" in result.output
 
     def test_help_short(self):
         runner = CliRunner()
         result = runner.invoke(main, ["-h"])
         assert result.exit_code == 0
-        assert "setup" in result.output
+        assert "tunnel" in result.output
 
     def test_version(self):
         runner = CliRunner()
         result = runner.invoke(main, ["-V"])
         assert result.exit_code == 0
-        assert "scitex-tunnel" in result.output
+        assert "scitex-ssh" in result.output
 
     def test_help_recursive(self):
         runner = CliRunner()
@@ -44,11 +45,11 @@ class TestCLI:
         runner = CliRunner()
         result = runner.invoke(main, [])
         assert result.exit_code == 0
-        assert "setup" in result.output
+        assert "tunnel" in result.output
 
     def test_setup_help(self):
         runner = CliRunner()
-        result = runner.invoke(main, ["setup", "--help"])
+        result = runner.invoke(main, ["setup-tunnel", "--help"])
         assert result.exit_code == 0
         assert "--port" in result.output
         assert "--bastion" in result.output
@@ -56,17 +57,17 @@ class TestCLI:
 
     def test_remove_help(self):
         runner = CliRunner()
-        result = runner.invoke(main, ["remove", "--help"])
+        result = runner.invoke(main, ["remove-tunnel", "--help"])
         assert result.exit_code == 0
         assert "--port" in result.output
 
     def test_status_help(self):
         runner = CliRunner()
-        result = runner.invoke(main, ["status", "--help"])
+        result = runner.invoke(main, ["show-status", "--help"])
         assert result.exit_code == 0
         assert "--port" in result.output
 
-    @patch("scitex_tunnel.status")
+    @patch("scitex_ssh.status")
     def test_status_invocation(self, mock_status):
         mock_status.return_value = {
             "success": True,
@@ -74,11 +75,11 @@ class TestCLI:
             "stderr": "",
         }
         runner = CliRunner()
-        result = runner.invoke(main, ["status"])
+        result = runner.invoke(main, ["show-status"])
         assert result.exit_code == 0
         assert "active tunnels" in result.output
 
-    @patch("scitex_tunnel.status")
+    @patch("scitex_ssh.status")
     def test_status_with_stderr(self, mock_status):
         mock_status.return_value = {
             "success": False,
@@ -86,10 +87,10 @@ class TestCLI:
             "stderr": "some error",
         }
         runner = CliRunner()
-        result = runner.invoke(main, ["status"])
+        result = runner.invoke(main, ["show-status"])
         assert result.exit_code == 0
 
-    @patch("scitex_tunnel.setup")
+    @patch("scitex_ssh.setup")
     def test_setup_success(self, mock_setup):
         mock_setup.return_value = {
             "success": True,
@@ -98,12 +99,13 @@ class TestCLI:
         }
         runner = CliRunner()
         result = runner.invoke(
-            main, ["setup", "-p", "2222", "-b", "user@host", "-s", "/dev/null"]
+            main,
+            ["setup-tunnel", "-p", "2222", "-b", "user@host", "-s", "/dev/null"],
         )
         assert result.exit_code == 0
         assert "successfully" in result.output
 
-    @patch("scitex_tunnel.setup")
+    @patch("scitex_ssh.setup")
     def test_setup_failure(self, mock_setup):
         mock_setup.return_value = {
             "success": False,
@@ -112,11 +114,12 @@ class TestCLI:
         }
         runner = CliRunner()
         result = runner.invoke(
-            main, ["setup", "-p", "2222", "-b", "user@host", "-s", "/dev/null"]
+            main,
+            ["setup-tunnel", "-p", "2222", "-b", "user@host", "-s", "/dev/null"],
         )
         assert result.exit_code != 0
 
-    @patch("scitex_tunnel.remove")
+    @patch("scitex_ssh.remove")
     def test_remove_success(self, mock_remove):
         mock_remove.return_value = {
             "success": True,
@@ -124,11 +127,11 @@ class TestCLI:
             "stderr": "",
         }
         runner = CliRunner()
-        result = runner.invoke(main, ["remove", "-p", "2222"])
+        result = runner.invoke(main, ["remove-tunnel", "-p", "2222"])
         assert result.exit_code == 0
         assert "removed" in result.output.lower()
 
-    @patch("scitex_tunnel.remove")
+    @patch("scitex_ssh.remove")
     def test_remove_failure(self, mock_remove):
         mock_remove.return_value = {
             "success": False,
@@ -136,17 +139,17 @@ class TestCLI:
             "stderr": "not found",
         }
         runner = CliRunner()
-        result = runner.invoke(main, ["remove", "-p", "2222"])
+        result = runner.invoke(main, ["remove-tunnel", "-p", "2222"])
         assert result.exit_code != 0
 
     def test_setup_missing_required(self):
         runner = CliRunner()
-        result = runner.invoke(main, ["setup"])
+        result = runner.invoke(main, ["setup-tunnel"])
         assert result.exit_code != 0
 
     def test_remove_missing_required(self):
         runner = CliRunner()
-        result = runner.invoke(main, ["remove"])
+        result = runner.invoke(main, ["remove-tunnel"])
         assert result.exit_code != 0
 
 
@@ -212,16 +215,16 @@ class TestMCPCli:
 
     def test_mcp_installation(self):
         runner = CliRunner()
-        result = runner.invoke(main, ["mcp", "installation"])
-        assert result.exit_code == 0
-        assert "pip install scitex-tunnel[mcp]" in result.output
+        result = runner.invoke(main, ["mcp", "show-installation"])
+        assert result.exit_code == 0, result.output
+        assert "pip install scitex-ssh[mcp]" in result.output
         assert "mcpServers" in result.output
 
-    @patch("scitex_tunnel.setup")
+    @patch("scitex_ssh.setup")
     def test_setup_env_var_fallback_error(self, mock_setup):
         mock_setup.side_effect = ValueError("bastion_server is required")
         runner = CliRunner()
-        result = runner.invoke(main, ["setup", "-p", "2222"])
+        result = runner.invoke(main, ["setup-tunnel", "-p", "2222"])
         assert result.exit_code != 0
         assert "bastion_server is required" in result.output
 

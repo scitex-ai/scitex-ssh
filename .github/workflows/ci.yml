@@ -34,4 +34,4 @@ jobs:
 
       - name: Run tests with coverage
         if: matrix.python-version == '3.11'
-        run: pytest --cov=scitex_tunnel --cov-report=term-missing
+        run: pytest --cov=scitex_ssh --cov-report=term-missing

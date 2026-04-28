@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "scitex-tunnel"
-version = "0.2.6"
-description = "Persistent SSH reverse tunnel for SciTeX (NAT traversal)"
+name = "scitex-ssh"
+version = "1.0.0"
+description = "SSH primitives for SciTeX (exec/copy/attach/tunnel; per-host allowlist)"
 readme = "README.md"
 license = "AGPL-3.0-only"
 requires-python = ">=3.9"
@@ -15,10 +15,11 @@ authors = [
 keywords = [
     "scitex",
     "ssh",
+    "exec",
+    "scp",
     "tunnel",
     "reverse-tunnel",
     "nat-traversal",
-    "autossh",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -33,16 +34,16 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: System :: Networking",
 ]
-dependencies = ["click>=8.0.0"]
+dependencies = ["click>=8.0.0", "pyyaml>=6.0"]
 
 [project.optional-dependencies]
+mcp = [
+    "fastmcp>=2.0.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "scitex_dev",
-]
-mcp = [
-    "fastmcp>=2.0.0",
 ]
 docs = [
     "sphinx>=7.0",
@@ -52,35 +53,30 @@ docs = [
     "sphinx-autodoc-typehints>=1.25",
 ]
 all = [
-    "click>=8.0.0",
-    "fastmcp>=2.0.0",
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "sphinx>=7.0",
-    "sphinx-rtd-theme>=2.0",
-    "myst-parser>=2.0",
-    "sphinx-copybutton>=0.5",
-    "sphinx-autodoc-typehints>=1.25",
+    "scitex-ssh[mcp]",
 ]
 
 [project.scripts]
-scitex-tunnel = "scitex_tunnel.cli:main"
+scitex-ssh = "scitex_ssh.cli:main"
 
 [project.entry-points."scitex_dev.docs"]
-scitex-tunnel = "scitex_tunnel"
+scitex-ssh = "scitex_ssh"
 
 [project.entry-points."scitex_dev.skills"]
-scitex-tunnel = "scitex_tunnel"
+scitex-ssh = "scitex_ssh"
 
 [project.urls]
-Homepage = "https://github.com/ywatanabe1989/scitex-tunnel"
-Repository = "https://github.com/ywatanabe1989/scitex-tunnel"
-Documentation = "https://scitex-tunnel.readthedocs.io"
+Homepage = "https://github.com/ywatanabe1989/scitex-ssh"
+Repository = "https://github.com/ywatanabe1989/scitex-ssh"
+Documentation = "https://scitex-ssh.readthedocs.io"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/scitex_tunnel"]
+packages = ["src/scitex_ssh"]
 
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.scitex-linter]
+library_dirs = ["src", "tests", "examples"]

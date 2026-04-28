@@ -1,4 +1,4 @@
-# Makefile for SciTeX Tunnel
+# Makefile for SciTeX SSH
 # Usage: make [target]
 
 GREEN := \033[0;32m
@@ -27,11 +27,11 @@ VERSION := $(shell grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"
 # Installation
 # ============================================================================
 install:
-	@echo "Installing scitex-tunnel..."
+	@echo "Installing scitex-ssh..."
 	pip install .
 
 develop:
-	@echo "Installing scitex-tunnel in development mode..."
+	@echo "Installing scitex-ssh in development mode..."
 	pip install -e ".[dev]"
 
 # ============================================================================
@@ -43,7 +43,7 @@ test:
 
 test-coverage:
 	@echo "Running tests with coverage..."
-	pytest tests/ -v --cov=scitex_tunnel --cov-report=term-missing
+	pytest tests/ -v --cov=scitex_ssh --cov-report=term-missing
 
 # ============================================================================
 # Building and publishing
@@ -71,7 +71,7 @@ docs:
 # Information
 # ============================================================================
 version:
-	@echo "scitex-tunnel $(VERSION)"
+	@echo "scitex-ssh $(VERSION)"
 
 # ============================================================================
 # Cleaning
@@ -93,7 +93,7 @@ clean:
 # ============================================================================
 help:
 	@echo ""
-	@printf "$(GREEN)scitex-tunnel v$(VERSION)$(NC)\n"
+	@printf "$(GREEN)scitex-ssh v$(VERSION)$(NC)\n"
 	@echo ""
 	@printf "$(CYAN)Installation:$(NC)\n"
 	@echo "  make install              Install package"

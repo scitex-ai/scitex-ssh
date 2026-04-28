@@ -7,5 +7,5 @@
 | `tunnel_remove` | `port` | Remove tunnel |
 
 Defaults for `bastion_server` and `secret_key_path` come from
-`SCITEX_TUNNEL_BASTION_SERVER` / `SCITEX_TUNNEL_SECRET_KEY_PATH` env vars
+`SCITEX_SSH_BASTION_SERVER` / `SCITEX_SSH_SECRET_KEY_PATH` env vars
 when the parameters are omitted.

@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-"""Main CLI entry point for scitex-tunnel."""
+"""Main CLI entry point for scitex-ssh."""
+
+import socket
 
 import click
 
 from ._introspect import list_python_apis
 from ._mcp import mcp
+from ._primitives import attach_cmd, copy_cmd, exec_cmd
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 COMMAND_CATEGORIES = [
-    ("Tunnel Management", ["setup", "remove", "status"]),
+    ("SSH Primitives", ["exec", "copy", "attach"]),
+    ("Tunnel Management", ["tunnel"]),
     ("Integration", ["mcp", "list-python-apis"]),
 ]
 
@@ -82,9 +86,13 @@ def _show_recursive_help(ctx):
 
 def _get_version():
     """Read version from package."""
-    from scitex_tunnel import __version__
+    from scitex_ssh import __version__
 
     return __version__
+
+
+def _default_host() -> str:
+    return socket.gethostname().split(".")[0]
 
 
 @click.group(
@@ -96,9 +104,9 @@ def _get_version():
 @click.option("--help-recursive", is_flag=True, help="Show help for all commands.")
 @click.pass_context
 def main(ctx, version, help_recursive):
-    """scitex-tunnel - Persistent SSH reverse tunnel for NAT traversal."""
+    """scitex-ssh - SSH primitives (exec/copy/attach) and gated reverse tunnels."""
     if version:
-        click.echo(f"scitex-tunnel {_get_version()}")
+        click.echo(f"scitex-ssh {_get_version()}")
         ctx.exit(0)
 
     if help_recursive:
@@ -110,30 +118,24 @@ def main(ctx, version, help_recursive):
 
 
 # -----------------------------------------------------------------------
-# Subcommands: setup, remove, status
+# Tunnel subgroup
 # -----------------------------------------------------------------------
 
 
-@main.command()
-@click.option("-p", "--port", required=True, type=int, help="Remote port to forward.")
-@click.option(
-    "-b",
-    "--bastion",
-    default=None,
-    help="Bastion server hostname or IP. [env: SCITEX_TUNNEL_BASTION_SERVER]",
-)
-@click.option(
-    "-s",
-    "--secret-key",
-    default=None,
-    help="Path to SSH private key. [env: SCITEX_TUNNEL_SECRET_KEY_PATH]",
-)
-def setup(port, bastion, secret_key):
-    """Set up a persistent SSH reverse tunnel."""
-    import scitex_tunnel
+@main.group("tunnel")
+def tunnel():
+    """Manage persistent SSH reverse tunnels (allowlist-gated)."""
+
+
+def _do_tunnel_setup(port, bastion, secret_key, host):
+    import scitex_ssh
+    from scitex_ssh._allowlist import PolicyError
 
     try:
-        result = scitex_tunnel.setup(port, bastion, secret_key)
+        result = scitex_ssh.setup(port, bastion, secret_key, host=host)
+    except PolicyError as e:
+        click.secho(f"ERROR: {e}", fg="red", err=True)
+        raise SystemExit(2)
     except ValueError as e:
         click.secho(f"ERROR: {e}", fg="red", err=True)
         raise SystemExit(1)
@@ -148,13 +150,15 @@ def setup(port, bastion, secret_key):
         raise SystemExit(1)
 
 
-@main.command()
-@click.option("-p", "--port", required=True, type=int, help="Port of tunnel to remove.")
-def remove(port):
-    """Remove a persistent SSH reverse tunnel."""
-    import scitex_tunnel
+def _do_tunnel_remove(port, host):
+    import scitex_ssh
+    from scitex_ssh._allowlist import PolicyError
 
-    result = scitex_tunnel.remove(port)
+    try:
+        result = scitex_ssh.remove(port, host=host)
+    except PolicyError as e:
+        click.secho(f"ERROR: {e}", fg="red", err=True)
+        raise SystemExit(2)
     if result["success"]:
         click.secho(f"Tunnel on port {port} removed.", fg="green")
         if result["stdout"]:
@@ -166,7 +170,52 @@ def remove(port):
         raise SystemExit(1)
 
 
-@main.command()
+def _do_tunnel_status(port):
+    import scitex_ssh
+
+    result = scitex_ssh.status(port)
+    click.echo(result["stdout"])
+    if result["stderr"]:
+        click.echo(result["stderr"], err=True)
+
+
+@tunnel.command("setup")
+@click.option("-p", "--port", required=True, type=int, help="Remote port to forward.")
+@click.option(
+    "-b",
+    "--bastion",
+    default=None,
+    help="Bastion server hostname or IP. [env: SCITEX_SSH_BASTION_SERVER]",
+)
+@click.option(
+    "-s",
+    "--secret-key",
+    default=None,
+    help="Path to SSH private key. [env: SCITEX_SSH_SECRET_KEY_PATH]",
+)
+@click.option(
+    "--host",
+    default=None,
+    help="Local host label for allowlist gating (default: local hostname).",
+)
+def tunnel_setup(port, bastion, secret_key, host):
+    """Set up a persistent SSH reverse tunnel."""
+    _do_tunnel_setup(port, bastion, secret_key, host or _default_host())
+
+
+@tunnel.command("remove")
+@click.option("-p", "--port", required=True, type=int, help="Port of tunnel to remove.")
+@click.option(
+    "--host",
+    default=None,
+    help="Local host label for allowlist gating (default: local hostname).",
+)
+def tunnel_remove(port, host):
+    """Remove a persistent SSH reverse tunnel."""
+    _do_tunnel_remove(port, host or _default_host())
+
+
+@tunnel.command("status")
 @click.option(
     "-p",
     "--port",
@@ -174,20 +223,59 @@ def remove(port):
     default=None,
     help="Specific port to check (default: all).",
 )
-def status(port):
-    """Check status of SSH reverse tunnels."""
-    import scitex_tunnel
-
-    result = scitex_tunnel.status(port)
-    click.echo(result["stdout"])
-    if result["stderr"]:
-        click.echo(result["stderr"], err=True)
+def tunnel_status(port):
+    """Check status of SSH reverse tunnels (informational; not gated)."""
+    _do_tunnel_status(port)
 
 
 # -----------------------------------------------------------------------
-# Register integration commands
+# Deprecated top-level aliases (hidden)
 # -----------------------------------------------------------------------
 
+
+def _deprecation_warn(old: str, new: str) -> None:
+    click.secho(
+        f"warning: `scitex-ssh {old}` is deprecated; use `scitex-ssh {new}`.",
+        fg="yellow",
+        err=True,
+    )
+
+
+@main.command("setup-tunnel", hidden=True)
+@click.option("-p", "--port", required=True, type=int)
+@click.option("-b", "--bastion", default=None)
+@click.option("-s", "--secret-key", default=None)
+@click.option("--host", default=None)
+def setup_tunnel_deprecated(port, bastion, secret_key, host):
+    """(deprecated) Use `tunnel setup`."""
+    _deprecation_warn("setup-tunnel", "tunnel setup")
+    _do_tunnel_setup(port, bastion, secret_key, host or _default_host())
+
+
+@main.command("remove-tunnel", hidden=True)
+@click.option("-p", "--port", required=True, type=int)
+@click.option("--host", default=None)
+def remove_tunnel_deprecated(port, host):
+    """(deprecated) Use `tunnel remove`."""
+    _deprecation_warn("remove-tunnel", "tunnel remove")
+    _do_tunnel_remove(port, host or _default_host())
+
+
+@main.command("show-status", hidden=True)
+@click.option("-p", "--port", type=int, default=None)
+def show_status_deprecated(port):
+    """(deprecated) Use `tunnel status`."""
+    _deprecation_warn("show-status", "tunnel status")
+    _do_tunnel_status(port)
+
+
+# -----------------------------------------------------------------------
+# Register top-level primitive + integration commands
+# -----------------------------------------------------------------------
+
+main.add_command(exec_cmd)
+main.add_command(copy_cmd)
+main.add_command(attach_cmd)
 main.add_command(list_python_apis)
 main.add_command(mcp)
 
