@@ -1,3 +1,9 @@
+---
+name: cli-commands
+description: Core — see file body for details.
+tags: [scitex-ssh, scitex-package]
+---
+
 ## CLI Commands
 
 ```bash

@@ -1,3 +1,9 @@
+---
+name: quick-start
+description: Setup a tunnel (port 22 exposed via bastion) — see file body for details.
+tags: [scitex-ssh, scitex-package]
+---
+
 ## Quick Start
 
 ```bash
