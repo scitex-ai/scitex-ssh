@@ -13,6 +13,7 @@ from ._allowlist import require as _require_allowed
 from ._primitives import SSHResult, attach, copy_from, copy_to, exec_remote
 
 __all__ = [
+    "__version__",
     "PolicyError",
     "SSHResult",
     "attach",
@@ -34,7 +35,7 @@ except _PackageNotFoundError:
     from pathlib import Path as _Path
 
     _pyproject = _Path(__file__).parent.parent.parent / "pyproject.toml"
-    __version__ = "0.0.0"
+    __version__ = "0.0.0+local"
     if _pyproject.exists():
         with open(_pyproject) as _f:
             for _line in _f:
