@@ -6,7 +6,7 @@
 
 Per scitex-dev audit-project PS303: every example must have a matching
 test under tests/examples/. Validates the example parses cleanly. The
-full end-to-end execution is covered by tests/scitex_ssh/test_examples.py.
+full end-to-end execution is covered by tests/integration/test_examples_runtime.py.
 """
 
 import subprocess

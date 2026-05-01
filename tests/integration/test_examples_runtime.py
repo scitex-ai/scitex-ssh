@@ -1,4 +1,9 @@
-"""Smoke test: every example script under examples/ runs to completion."""
+"""End-to-end smoke: every Python example under examples/ runs to completion.
+
+Lives in tests/integration/ (not tests/examples/) because it cross-cuts every
+example with a single glob; the per-example syntax-check smokes in
+tests/examples/ provide finer-grained PS303 coverage.
+"""
 
 import subprocess
 import sys
