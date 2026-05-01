@@ -8,15 +8,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>scitex_ssh &mdash; SciTeX SSH v1.0.0</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=8d563738"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
       <script src="../_static/copybutton.js?v=f281be69"></script>
     <script src="../_static/js/theme.js"></script>
@@ -83,11 +83,11 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">scitex_ssh</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#scitex_ssh.PolicyError"><code class="docutils literal notranslate"><span class="pre">PolicyError</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#scitex_ssh.SSHResult"><code class="docutils literal notranslate"><span class="pre">SSHResult</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#scitex_ssh.SSHResult.__init__"><code class="docutils literal notranslate"><span class="pre">SSHResult.__init__()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="#scitex_ssh.SSHResult.success"><code class="docutils literal notranslate"><span class="pre">SSHResult.success</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#scitex_ssh.SSHResult.returncode"><code class="docutils literal notranslate"><span class="pre">SSHResult.returncode</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#scitex_ssh.SSHResult.stdout"><code class="docutils literal notranslate"><span class="pre">SSHResult.stdout</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#scitex_ssh.SSHResult.stderr"><code class="docutils literal notranslate"><span class="pre">SSHResult.stderr</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#scitex_ssh.SSHResult.success"><code class="docutils literal notranslate"><span class="pre">SSHResult.success</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#scitex_ssh.SSHResult.__init__"><code class="docutils literal notranslate"><span class="pre">SSHResult.__init__()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#scitex_ssh.attach"><code class="docutils literal notranslate"><span class="pre">attach()</span></code></a></li>
@@ -131,38 +131,38 @@
 <p>SciTeX SSH - SSH primitives (exec/copy/attach) and gated reverse tunnels.</p>
 <dl class="py exception">
 <dt class="sig sig-object py" id="scitex_ssh.PolicyError">
-<em class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">scitex_ssh.</span></span><span class="sig-name descname"><span class="pre">PolicyError</span></span><a class="reference internal" href="../_modules/scitex_ssh/_allowlist.html#PolicyError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scitex_ssh.PolicyError" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">scitex_ssh.</span></span><span class="sig-name descname"><span class="pre">PolicyError</span></span><a class="reference internal" href="../_modules/scitex_ssh/_allowlist.html#PolicyError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scitex_ssh.PolicyError" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">RuntimeError</span></code></a></p>
 <p>Raised when an action is denied by the allowlist.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="scitex_ssh.SSHResult">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">scitex_ssh.</span></span><span class="sig-name descname"><span class="pre">SSHResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">returncode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stdout</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stderr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/scitex_ssh/_primitives.html#SSHResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scitex_ssh.SSHResult" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">scitex_ssh.</span></span><span class="sig-name descname"><span class="pre">SSHResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">returncode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stdout</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stderr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/scitex_ssh/_primitives.html#SSHResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#scitex_ssh.SSHResult" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="scitex_ssh.SSHResult.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">returncode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stdout</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stderr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#scitex_ssh.SSHResult.__init__" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="scitex_ssh.SSHResult.success">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">success</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></em><a class="headerlink" href="#scitex_ssh.SSHResult.success" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
 <dl class="py attribute">
 <dt class="sig sig-object py" id="scitex_ssh.SSHResult.returncode">
-<span class="sig-name descname"><span class="pre">returncode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></em><a class="headerlink" href="#scitex_ssh.SSHResult.returncode" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">returncode</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#scitex_ssh.SSHResult.returncode" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="scitex_ssh.SSHResult.stdout">
-<span class="sig-name descname"><span class="pre">stdout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><a class="headerlink" href="#scitex_ssh.SSHResult.stdout" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">stdout</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><a class="headerlink" href="#scitex_ssh.SSHResult.stdout" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="scitex_ssh.SSHResult.stderr">
-<span class="sig-name descname"><span class="pre">stderr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></em><a class="headerlink" href="#scitex_ssh.SSHResult.stderr" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">stderr</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><a class="headerlink" href="#scitex_ssh.SSHResult.stderr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="scitex_ssh.SSHResult.success">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">success</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><a class="headerlink" href="#scitex_ssh.SSHResult.success" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="scitex_ssh.SSHResult.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">returncode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stdout</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stderr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#scitex_ssh.SSHResult.__init__" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
