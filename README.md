@@ -10,21 +10,13 @@
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 <!-- scitex-badges:end -->
 
-
 <p align="center">
   <a href="https://scitex.ai">
     <img src="docs/scitex-logo-blue-cropped.png" alt="SciTeX" width="400">
   </a>
 </p>
 
-<p align="center"><b>Persistent SSH (Secure Shell) reverse tunnel for NAT (Network Address Translation) traversal</b></p>
-
-<p align="center">
-  <a href="https://badge.fury.io/py/scitex-ssh"><img src="https://badge.fury.io/py/scitex-ssh.svg" alt="PyPI version"></a>
-  <a href="https://scitex-ssh.readthedocs.io/"><img src="https://readthedocs.org/projects/scitex-ssh/badge/?version=latest" alt="Documentation"></a>
-  <a href="https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/ci.yml"><img src="https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/ci.yml/badge.svg" alt="Tests"></a>
-  <a href="https://www.gnu.org/licenses/agpl-3.0"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg" alt="License: AGPL-3.0"></a>
-</p>
+<p align="center"><b>Persistent SSH reverse tunnel for NAT traversal</b></p>
 
 <p align="center">
   <a href="https://scitex-ssh.readthedocs.io/">Full Documentation</a> · <code>pip install scitex-ssh</code>
@@ -32,23 +24,14 @@
 
 ---
 
-> **Interfaces:** Python ⭐ · CLI ⭐⭐⭐ (primary) · MCP ⭐⭐ · Skills ⭐⭐ · Hook — · HTTP —
-
 ## Problem and Solution
-
 
 | # | Problem | Solution |
 |---|---------|----------|
 | 1 | **Lab machines are behind NAT** -- collaborator can't `ssh lab-box` from the conference | **Persistent reverse tunnel** -- `scitex-ssh setup --port 8888 --bastion gw.example.com` installs an autossh systemd service; survives reboots + flaky networks |
 | 2 | **Manual `autossh` + systemd unit authoring is tedious** -- half the team never bothers | **One-line lifecycle** -- `setup` / `status` / `remove` commands handle the unit file, env vars, restart policy |
 
-## Problem
-
-Machines behind NAT (Network Address Translation) or institutional firewalls cannot receive incoming SSH (Secure Shell) connections. Researchers running long experiments on lab workstations, HPC (High-Performance Computing) nodes, or edge devices need reliable remote access without manual port forwarding or VPN (Virtual Private Network) setup. Existing solutions (ngrok, cloudflared) often require external accounts or lack systemd integration for persistent, auto-recovering connections.
-
-## Solution
-
-SciTeX SSH creates **persistent reverse SSH tunnels** using autossh and systemd. Each tunnel runs as a managed service that auto-restarts on failure, survives reboots, and requires only a bastion server with SSH access.
+## Architecture
 
 ```
 ┌─────────────────────────────────────────┐     ┌──────────────────────┐     ┌──────────────────┐
@@ -205,7 +188,7 @@ scitex-ssh remove -p 2222
 ## Three Interfaces
 
 <details>
-<summary><strong>Python API (Application Programming Interface)</strong></summary>
+<summary><strong>Python API ⭐</strong></summary>
 
 <br>
 
@@ -228,7 +211,7 @@ result = scitex_ssh.remove(2222)
 </details>
 
 <details>
-<summary><strong>CLI Commands</strong></summary>
+<summary><strong>CLI Commands ⭐⭐⭐</strong></summary>
 
 <br>
 
@@ -247,7 +230,7 @@ scitex-ssh mcp list-tools                  # List MCP (Model Context Protocol) t
 </details>
 
 <details>
-<summary><strong>MCP (Model Context Protocol) Server — for AI Agents</strong></summary>
+<summary><strong>MCP Server ⭐⭐</strong></summary>
 
 <br>
 
@@ -291,14 +274,14 @@ scitex-ssh setup -p 2222
 
 ## Part of SciTeX
 
-Tunnel is part of [**SciTeX**](https://scitex.ai). When used inside the SciTeX framework, tunnel management integrates with the orchestrator:
+`scitex-ssh` is part of [**SciTeX**](https://scitex.ai). When used inside the SciTeX framework, SSH tunnel management integrates with the orchestrator:
 
 ```python
 import scitex
 
 # Manage tunnels through the unified interface
-result = scitex.tunnel.setup(2222, "user@bastion.example.com", "~/.ssh/id_rsa")
-scitex.tunnel.status()
+result = scitex.ssh.setup(2222, "user@bastion.example.com", "~/.ssh/id_rsa")
+scitex.ssh.status()
 ```
 
 The SciTeX system follows the Four Freedoms for Research below, inspired by [the Free Software Definition](https://www.gnu.org/philosophy/free-sw.en.html):
