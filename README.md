@@ -1,5 +1,17 @@
 # SciTeX SSH (<code>scitex-ssh</code>)
 
+<p align="center">
+  <a href="https://scitex.ai">
+    <img src="docs/scitex-logo-blue-cropped.png" alt="SciTeX" width="400">
+  </a>
+</p>
+
+<p align="center"><b>Persistent SSH reverse tunnel for NAT traversal</b></p>
+
+<p align="center">
+  <a href="https://scitex-ssh.readthedocs.io/">Full Documentation</a> · <code>pip install scitex-ssh</code>
+</p>
+
 <!-- scitex-badges:start -->
 [![PyPI](https://img.shields.io/pypi/v/scitex-ssh.svg)](https://pypi.org/project/scitex-ssh/)
 [![Python](https://img.shields.io/pypi/pyversions/scitex-ssh.svg)](https://pypi.org/project/scitex-ssh/)
@@ -10,45 +22,18 @@
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 <!-- scitex-badges:end -->
 
-
-<p align="center">
-  <a href="https://scitex.ai">
-    <img src="docs/scitex-logo-blue-cropped.png" alt="SciTeX" width="400">
-  </a>
-</p>
-
-<p align="center"><b>Persistent SSH (Secure Shell) reverse tunnel for NAT (Network Address Translation) traversal</b></p>
-
-<p align="center">
-  <a href="https://badge.fury.io/py/scitex-ssh"><img src="https://badge.fury.io/py/scitex-ssh.svg" alt="PyPI version"></a>
-  <a href="https://scitex-ssh.readthedocs.io/"><img src="https://readthedocs.org/projects/scitex-ssh/badge/?version=latest" alt="Documentation"></a>
-  <a href="https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/ci.yml"><img src="https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/ci.yml/badge.svg" alt="Tests"></a>
-  <a href="https://www.gnu.org/licenses/agpl-3.0"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg" alt="License: AGPL-3.0"></a>
-</p>
-
-<p align="center">
-  <a href="https://scitex-ssh.readthedocs.io/">Full Documentation</a> · <code>pip install scitex-ssh</code>
-</p>
+> **⚠ Heads-up — acceptable use**: Before setting up reverse tunnels, check your organization's acceptable use policy and network terms of service. Reverse tunnels may bypass institutional firewalls or network policies. The authors accept no responsibility for any consequences arising from the use of this software.
 
 ---
 
-> **Interfaces:** Python ⭐ · CLI ⭐⭐⭐ (primary) · MCP ⭐⭐ · Skills ⭐⭐ · Hook — · HTTP —
-
 ## Problem and Solution
-
 
 | # | Problem | Solution |
 |---|---------|----------|
 | 1 | **Lab machines are behind NAT** -- collaborator can't `ssh lab-box` from the conference | **Persistent reverse tunnel** -- `scitex-ssh setup --port 8888 --bastion gw.example.com` installs an autossh systemd service; survives reboots + flaky networks |
 | 2 | **Manual `autossh` + systemd unit authoring is tedious** -- half the team never bothers | **One-line lifecycle** -- `setup` / `status` / `remove` commands handle the unit file, env vars, restart policy |
 
-## Problem
-
-Machines behind NAT (Network Address Translation) or institutional firewalls cannot receive incoming SSH (Secure Shell) connections. Researchers running long experiments on lab workstations, HPC (High-Performance Computing) nodes, or edge devices need reliable remote access without manual port forwarding or VPN (Virtual Private Network) setup. Existing solutions (ngrok, cloudflared) often require external accounts or lack systemd integration for persistent, auto-recovering connections.
-
-## Solution
-
-SciTeX SSH creates **persistent reverse SSH tunnels** using autossh and systemd. Each tunnel runs as a managed service that auto-restarts on failure, survives reboots, and requires only a bastion server with SSH access.
+## Architecture
 
 ```
 ┌─────────────────────────────────────────┐     ┌──────────────────────┐     ┌──────────────────┐
@@ -72,7 +57,10 @@ SciTeX SSH creates **persistent reverse SSH tunnels** using autossh and systemd.
 
 <p align="center"><sub><b>Figure 1.</b> Architecture overview. The lab workstation initiates a reverse SSH tunnel to the bastion server. The remote client connects to the bastion server, which forwards the connection back through the tunnel to the lab workstation.</sub></p>
 
-## How It Works
+<details>
+<summary><strong>How It Works</strong></summary>
+
+<br>
 
 1. **`setup`** (requires **sudo**) writes a systemd unit file at `/etc/systemd/system/autossh-tunnel-{port}.service` that runs autossh with the reverse tunnel flag (`-R {port}:localhost:22`). The service is enabled (starts on boot) and started immediately.
 2. **autossh** monitors the SSH connection and automatically re-establishes it if the connection drops — network interruptions, server reboots, or SSH timeouts are handled transparently.
@@ -87,6 +75,8 @@ SciTeX SSH creates **persistent reverse SSH tunnels** using autossh and systemd.
 
 <p align="center"><sub><b>Table 1.</b> Three operations. Each maps to a CLI (Command-Line Interface) command, Python function, and MCP (Model Context Protocol) tool.</sub></p>
 
+</details>
+
 ## Installation
 
 Requires `autossh` on the host machine (`sudo apt install autossh`).
@@ -95,11 +85,36 @@ Requires `autossh` on the host machine (`sudo apt install autossh`).
 pip install scitex-ssh
 ```
 
-> **SciTeX users**: `pip install scitex` already includes tunnel support.
+### Configuration
 
-> **Note**: `setup` and `remove` require **sudo** privileges because they write systemd service files to `/etc/systemd/system/` and run `systemctl` commands. You will be prompted for your password.
+Copy [`.env.example`](.env.example) to `.env` (gitignored) at your
+project root, then edit:
 
-> **Disclaimer**: Before setting up reverse tunnels, please check your organization's acceptable use policy and network terms of service. Reverse tunnels may bypass institutional firewalls or network policies. The authors accept no responsibility for any consequences arising from the use of this software.
+```bash
+cp .env.example .env
+$EDITOR .env
+```
+
+CLI flags always override env vars. The full list of variables (with
+inline comments) lives in `.env.example`.
+
+<details>
+<summary><strong>Local state directories</strong></summary>
+
+<br>
+
+scitex-ssh reads optional config + cache from the canonical SciTeX
+local-state locations:
+
+| Path                          | Scope         | Purpose                              |
+|-------------------------------|---------------|--------------------------------------|
+| `~/.scitex/ssh/`              | user-global   | per-user config, credentials, cache  |
+| `<proj-root>/.scitex/ssh/`    | project-local | overrides for the current repo       |
+
+Project-local wins when both exist. Both are optional — CLI flags or
+`.env` work without either.
+
+</details>
 
 <details>
 <summary><strong>Alternative: No-sudo setup via ~/.bashrc (no root access needed)</strong></summary>
@@ -189,23 +204,10 @@ remove-autossh-service.sh -p 2222
 
 </details>
 
-## Quick Start
-
-```bash
-# Set up a persistent reverse tunnel
-scitex-ssh setup -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
-
-# Check tunnel status
-scitex-ssh status
-
-# Remove a tunnel
-scitex-ssh remove -p 2222
-```
-
-## Three Interfaces
+## Four Interfaces
 
 <details>
-<summary><strong>Python API (Application Programming Interface)</strong></summary>
+<summary><strong>Python API ⭐</strong></summary>
 
 <br>
 
@@ -223,12 +225,12 @@ result = scitex_ssh.status(port=2222)
 result = scitex_ssh.remove(2222)
 ```
 
-> **[Full API reference](https://scitex-ssh.readthedocs.io/)**
+> **[Full API reference](https://scitex-ssh.readthedocs.io/en/latest/api/scitex_ssh.html)**
 
 </details>
 
-<details>
-<summary><strong>CLI Commands</strong></summary>
+<details open>
+<summary><strong>CLI Commands ⭐⭐⭐ (primary)</strong></summary>
 
 <br>
 
@@ -242,12 +244,14 @@ scitex-ssh list-python-apis                # List Python APIs
 scitex-ssh mcp list-tools                  # List MCP (Model Context Protocol) tools
 ```
 
-> **[Full CLI reference](https://scitex-ssh.readthedocs.io/)**
+> **Note**: `setup` and `remove` write systemd unit files under `/etc/systemd/system/` and call `systemctl`, so they prompt for **sudo** the first time. `status`, `list-python-apis`, and `mcp ...` do not.
+
+> **[Full CLI reference](https://scitex-ssh.readthedocs.io/en/latest/quickstart.html)** · run `scitex-ssh --help-recursive` for the live tree.
 
 </details>
 
 <details>
-<summary><strong>MCP (Model Context Protocol) Server — for AI Agents</strong></summary>
+<summary><strong>MCP Server ⭐⭐</strong></summary>
 
 <br>
 
@@ -265,43 +269,44 @@ AI agents can manage tunnels autonomously.
 scitex-ssh mcp start
 ```
 
-> **[Full MCP specification](https://scitex-ssh.readthedocs.io/)**
+> **[Full MCP specification](https://scitex-ssh.readthedocs.io/en/latest/api/scitex_ssh._mcp.html)** · run `scitex-ssh mcp list-tools` for the live registry.
 
 </details>
 
-## Environment Variables
+<details>
+<summary><strong>Skills ⭐⭐</strong></summary>
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `SCITEX_SSH_BASTION_SERVER` | Default bastion server | `user@bastion.example.com` |
-| `SCITEX_SSH_SECRET_KEY_PATH` | Default SSH (Secure Shell) private key path | `~/.ssh/id_rsa` |
-| `SCITEX_SSH_DEBUG_MODE` | Enable verbose output (`1`) | `0` |
+<br>
 
-<p align="center"><sub><b>Table 3.</b> Environment variables. CLI flags take precedence when provided.</sub></p>
+Bundled `_skills/scitex-ssh/` for AI-agent discovery (loaded by Claude
+Code, MCP-aware tools, or `newb`):
 
-Set these in `.env` or your shell profile to avoid repeating `-b` and `-s` flags:
+| File | Purpose |
+|------|---------|
+| `SKILL.md` | Index — what this package does + tag map |
+| `01_quick-start.md` | 30-second tour |
+| `02_python-api.md` | Python API surface |
+| `10_cli-commands.md` | CLI reference |
+| `11_mcp-tools-for-ai-agents.md` | MCP tool catalog |
+| `20_environment-variables.md` | `SCITEX_SSH_*` env vars |
 
 ```bash
-export SCITEX_SSH_BASTION_SERVER=user@bastion.example.com
-export SCITEX_SSH_SECRET_KEY_PATH=~/.ssh/id_rsa
-
-# Now just specify the port
-scitex-ssh setup -p 2222
+scitex-ssh skills list
+scitex-ssh skills get quick-start
 ```
+
+> **[Full skills directory](https://github.com/ywatanabe1989/scitex-ssh/tree/develop/src/scitex_ssh/_skills/scitex-ssh)**
+
+</details>
 
 ## Part of SciTeX
 
-Tunnel is part of [**SciTeX**](https://scitex.ai). When used inside the SciTeX framework, tunnel management integrates with the orchestrator:
+`scitex-ssh` is part of [**SciTeX**](https://scitex.ai). Install via
+the umbrella with `pip install scitex[ssh]` to use as
+`scitex.ssh` (Python) or `scitex ssh ...` (CLI).
 
-```python
-import scitex
-
-# Manage tunnels through the unified interface
-result = scitex.tunnel.setup(2222, "user@bastion.example.com", "~/.ssh/id_rsa")
-scitex.tunnel.status()
-```
-
-The SciTeX system follows the Four Freedoms for Research below, inspired by [the Free Software Definition](https://www.gnu.org/philosophy/free-sw.en.html):
+SciTeX follows the Four Freedoms for Research below, inspired by
+[the Free Software Definition](https://www.gnu.org/philosophy/free-sw.en.html):
 
 >Four Freedoms for Research
 >

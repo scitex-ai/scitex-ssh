@@ -1,10 +1,15 @@
-"""Smoke test: every example script under examples/ runs to completion."""
+"""End-to-end smoke: every Python example under examples/ runs to completion.
+
+Lives in tests/integration/ (not tests/examples/) because it cross-cuts every
+example with a single glob; the per-example syntax-check smokes in
+tests/examples/ provide finer-grained PS303 coverage.
+"""
 
 import subprocess
 import sys
 from pathlib import Path
 
-EXAMPLES = sorted(Path(__file__).parent.parent.joinpath("examples").glob("*.py"))
+EXAMPLES = sorted(Path(__file__).resolve().parents[2].joinpath("examples").glob("*.py"))
 
 
 def test_examples_smoke(tmp_path):

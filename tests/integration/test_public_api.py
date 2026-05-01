@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Tests for scitex_ssh Python API."""
+"""Integration tests for scitex_ssh public API surface.
+
+Exercises the top-level functions exposed from scitex_ssh/__init__.py
+(setup/remove/status/version) end-to-end, with subprocess and allowlist
+mocked. Lives in tests/integration/ (not tests/scitex_ssh/) because the
+package's public API is defined in __init__.py and there is no module
+basename to mirror — this is the canonical home for cross-module surface
+tests per scitex-dev audit-project §3 / PS302.
+"""
 
 import os
 import subprocess

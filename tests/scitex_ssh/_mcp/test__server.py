@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Tests for MCP server tools."""
 
+import asyncio
 from unittest.mock import patch
 
 import pytest
@@ -15,6 +16,13 @@ except ImportError:
 pytestmark = pytest.mark.skipif(not HAS_FASTMCP, reason="fastmcp not installed")
 
 
+def _get_tool_fn(server, name):
+    """Resolve a tool's underlying callable via FastMCP's public async API."""
+    tool = asyncio.run(server.get_tool(name))
+    assert tool is not None, f"tool {name!r} not registered"
+    return tool.fn
+
+
 class TestCreateServer:
     """MCP server creation tests."""
 
@@ -22,6 +30,11 @@ class TestCreateServer:
         server = create_server()
         assert server is not None
         assert server.name == "scitex-ssh"
+
+    def test_server_registers_expected_tools(self):
+        server = create_server()
+        names = {t.name for t in asyncio.run(server.list_tools())}
+        assert {"tunnel_setup", "tunnel_status", "tunnel_remove"}.issubset(names)
 
 
 class TestMCPTools:
@@ -35,12 +48,7 @@ class TestMCPTools:
             "stderr": "",
         }
         server = create_server()
-        tool_fn = None
-        for tool in server._tool_manager._tools.values():
-            if tool.name == "tunnel_setup":
-                tool_fn = tool.fn
-                break
-        assert tool_fn is not None
+        tool_fn = _get_tool_fn(server, "tunnel_setup")
         result = tool_fn(
             port=2222, bastion_server="user@host", secret_key_path="/dev/null"
         )
@@ -55,12 +63,7 @@ class TestMCPTools:
             "stderr": "",
         }
         server = create_server()
-        tool_fn = None
-        for tool in server._tool_manager._tools.values():
-            if tool.name == "tunnel_status":
-                tool_fn = tool.fn
-                break
-        assert tool_fn is not None
+        tool_fn = _get_tool_fn(server, "tunnel_status")
         result = tool_fn(port=None)
         mock_status.assert_called_once_with(None)
         assert result["success"] is True
@@ -73,12 +76,8 @@ class TestMCPTools:
             "stderr": "",
         }
         server = create_server()
-        tool_fn = None
-        for tool in server._tool_manager._tools.values():
-            if tool.name == "tunnel_status":
-                tool_fn = tool.fn
-                break
-        result = tool_fn(port=2222)
+        tool_fn = _get_tool_fn(server, "tunnel_status")
+        tool_fn(port=2222)
         mock_status.assert_called_once_with(2222)
 
     @patch("scitex_ssh.remove")
@@ -89,12 +88,7 @@ class TestMCPTools:
             "stderr": "",
         }
         server = create_server()
-        tool_fn = None
-        for tool in server._tool_manager._tools.values():
-            if tool.name == "tunnel_remove":
-                tool_fn = tool.fn
-                break
-        assert tool_fn is not None
+        tool_fn = _get_tool_fn(server, "tunnel_remove")
         result = tool_fn(port=2222)
         mock_remove.assert_called_once_with(2222)
         assert result["success"] is True

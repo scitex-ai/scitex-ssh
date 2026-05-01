@@ -9,6 +9,8 @@ interfaces:
   skills: 2
   hook: 0
   http: 0
+name: scitex-ssh
+tags: [scitex-ssh, scitex-package]
 ---
 
 # SSH Tunnels with scitex-ssh

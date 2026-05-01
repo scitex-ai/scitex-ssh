@@ -1,3 +1,9 @@
+---
+name: python-api
+description: ## Python API
+tags: [scitex-ssh, scitex-package]
+---
+
 ## Python API
 
 | Function | Signature | Purpose |
