@@ -298,17 +298,9 @@ scitex-ssh setup -p 2222
 
 ## Part of SciTeX
 
-`scitex-ssh` is part of [**SciTeX**](https://scitex.ai). When used inside the SciTeX framework, SSH tunnel management integrates with the orchestrator:
-
-```python
-import scitex
-
-# Manage tunnels through the unified interface
-result = scitex.ssh.setup(2222, "user@bastion.example.com", "~/.ssh/id_rsa")
-scitex.ssh.status()
-```
-
-The SciTeX system follows the Four Freedoms for Research below, inspired by [the Free Software Definition](https://www.gnu.org/philosophy/free-sw.en.html):
+`scitex-ssh` is part of [**SciTeX**](https://scitex.ai), which follows
+the Four Freedoms for Research below, inspired by
+[the Free Software Definition](https://www.gnu.org/philosophy/free-sw.en.html):
 
 >Four Freedoms for Research
 >
