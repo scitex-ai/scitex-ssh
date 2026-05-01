@@ -298,9 +298,9 @@ scitex-ssh setup -p 2222
 
 ## Part of SciTeX
 
-`scitex-tunnel` is part of [**SciTeX**](https://scitex.ai). Install via
-the umbrella with `pip install scitex[tunnel]` to use as
-`scitex.tunnel` (Python) or `scitex tunnel ...` (CLI).
+`scitex-ssh` is part of [**SciTeX**](https://scitex.ai). Install via
+the umbrella with `pip install scitex[ssh]` to use as
+`scitex.ssh` (Python) or `scitex ssh ...` (CLI).
 
 SciTeX follows the Four Freedoms for Research below, inspired by
 [the Free Software Definition](https://www.gnu.org/philosophy/free-sw.en.html):
