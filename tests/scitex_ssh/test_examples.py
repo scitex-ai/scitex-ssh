@@ -4,7 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-EXAMPLES = sorted(Path(__file__).parent.parent.joinpath("examples").glob("*.py"))
+EXAMPLES = sorted(Path(__file__).resolve().parents[2].joinpath("examples").glob("*.py"))
 
 
 def test_examples_smoke(tmp_path):
