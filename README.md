@@ -22,6 +22,8 @@
 [![License: AGPL v3](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 <!-- scitex-badges:end -->
 
+> **⚠ Heads-up — acceptable use**: Before setting up reverse tunnels, check your organization's acceptable use policy and network terms of service. Reverse tunnels may bypass institutional firewalls or network policies. The authors accept no responsibility for any consequences arising from the use of this software.
+
 ---
 
 ## Problem and Solution
@@ -113,10 +115,6 @@ Project-local wins when both exist. Both are optional — CLI flags or
 `.env` work without either.
 
 </details>
-
-> **Note**: `setup` and `remove` require **sudo** privileges because they write systemd service files to `/etc/systemd/system/` and run `systemctl` commands. You will be prompted for your password.
-
-> **Disclaimer**: Before setting up reverse tunnels, please check your organization's acceptable use policy and network terms of service. Reverse tunnels may bypass institutional firewalls or network policies. The authors accept no responsibility for any consequences arising from the use of this software.
 
 <details>
 <summary><strong>Alternative: No-sudo setup via ~/.bashrc (no root access needed)</strong></summary>
@@ -245,6 +243,8 @@ scitex-ssh remove -p 2222                  # Remove tunnel
 scitex-ssh list-python-apis                # List Python APIs
 scitex-ssh mcp list-tools                  # List MCP (Model Context Protocol) tools
 ```
+
+> **Note**: `setup` and `remove` write systemd unit files under `/etc/systemd/system/` and call `systemctl`, so they prompt for **sudo** the first time. `status`, `list-python-apis`, and `mcp ...` do not.
 
 > **[Full CLI reference](https://scitex-ssh.readthedocs.io/en/latest/quickstart.html)** · run `scitex-ssh --help-recursive` for the live tree.
 
