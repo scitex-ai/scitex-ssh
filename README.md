@@ -103,8 +103,8 @@ local-state locations:
 
 | Path                            | Scope         | Purpose                              |
 |---------------------------------|---------------|--------------------------------------|
-| `~/.scitex/scitex-ssh/`         | user-global   | per-user config, credentials, cache  |
-| `<proj-root>/.scitex/scitex-ssh/` | project-local | overrides for the current repo       |
+| `~/.scitex/ssh/`              | user-global   | per-user config, credentials, cache  |
+| `<proj-root>/.scitex/ssh/`    | project-local | overrides for the current repo       |
 
 Project-local wins when both exist. Both are optional — CLI flags or
 `.env` work without either.
