@@ -1,15 +1,5 @@
 # SciTeX SSH (<code>scitex-ssh</code>)
 
-<!-- scitex-badges:start -->
-[![PyPI](https://img.shields.io/pypi/v/scitex-ssh.svg)](https://pypi.org/project/scitex-ssh/)
-[![Python](https://img.shields.io/pypi/pyversions/scitex-ssh.svg)](https://pypi.org/project/scitex-ssh/)
-[![Tests](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/test.yml)
-[![Install Test](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/install-test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/install-test.yml)
-[![Coverage](https://codecov.io/gh/ywatanabe1989/scitex-ssh/graph/badge.svg)](https://codecov.io/gh/ywatanabe1989/scitex-ssh)
-[![Docs](https://readthedocs.org/projects/scitex-ssh/badge/?version=latest)](https://scitex-ssh.readthedocs.io/en/latest/)
-[![License: AGPL v3](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-<!-- scitex-badges:end -->
-
 <p align="center">
   <a href="https://scitex.ai">
     <img src="docs/scitex-logo-blue-cropped.png" alt="SciTeX" width="400">
@@ -21,6 +11,16 @@
 <p align="center">
   <a href="https://scitex-ssh.readthedocs.io/">Full Documentation</a> · <code>pip install scitex-ssh</code>
 </p>
+
+<!-- scitex-badges:start -->
+[![PyPI](https://img.shields.io/pypi/v/scitex-ssh.svg)](https://pypi.org/project/scitex-ssh/)
+[![Python](https://img.shields.io/pypi/pyversions/scitex-ssh.svg)](https://pypi.org/project/scitex-ssh/)
+[![Tests](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/test.yml)
+[![Install Test](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/install-test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/install-test.yml)
+[![Coverage](https://codecov.io/gh/ywatanabe1989/scitex-ssh/graph/badge.svg)](https://codecov.io/gh/ywatanabe1989/scitex-ssh)
+[![Docs](https://readthedocs.org/projects/scitex-ssh/badge/?version=latest)](https://scitex-ssh.readthedocs.io/en/latest/)
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+<!-- scitex-badges:end -->
 
 ---
 
@@ -296,9 +296,9 @@ scitex-ssh setup -p 2222
 
 ## Part of SciTeX
 
-`scitex-ssh` is part of [**SciTeX**](https://scitex.ai). Install via the
-umbrella with `pip install scitex[ssh]` to use as `scitex.ssh` (Python)
-or `scitex ssh ...` (CLI).
+`scitex-tunnel` is part of [**SciTeX**](https://scitex.ai). Install via
+the umbrella with `pip install scitex[tunnel]` to use as
+`scitex.tunnel` (Python) or `scitex tunnel ...` (CLI).
 
 SciTeX follows the Four Freedoms for Research below, inspired by
 [the Free Software Definition](https://www.gnu.org/philosophy/free-sw.en.html):
