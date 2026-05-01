@@ -83,6 +83,32 @@ Requires `autossh` on the host machine (`sudo apt install autossh`).
 pip install scitex-ssh
 ```
 
+### Configuration
+
+Copy [`.env.example`](.env.example) to `.env` (gitignored) at your
+project root, then edit:
+
+```bash
+cp .env.example .env
+$EDITOR .env
+```
+
+CLI flags always override env vars. The full list of variables (with
+inline comments) lives in `.env.example`.
+
+### Local state
+
+scitex-ssh reads optional config + cache from the canonical SciTeX
+local-state locations:
+
+| Path                            | Scope         | Purpose                              |
+|---------------------------------|---------------|--------------------------------------|
+| `~/.scitex/scitex-ssh/`         | user-global   | per-user config, credentials, cache  |
+| `<proj-root>/.scitex/scitex-ssh/` | project-local | overrides for the current repo       |
+
+Project-local wins when both exist. Both are optional — CLI flags or
+`.env` work without either.
+
 > **Note**: `setup` and `remove` require **sudo** privileges because they write systemd service files to `/etc/systemd/system/` and run `systemctl` commands. You will be prompted for your password.
 
 > **Disclaimer**: Before setting up reverse tunnels, please check your organization's acceptable use policy and network terms of service. Reverse tunnels may bypass institutional firewalls or network policies. The authors accept no responsibility for any consequences arising from the use of this software.
@@ -280,26 +306,6 @@ scitex-ssh skills get quick-start
 > **[Full skills directory](https://github.com/ywatanabe1989/scitex-ssh/tree/develop/src/scitex_ssh/_skills/scitex-ssh)**
 
 </details>
-
-## Environment Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `SCITEX_SSH_BASTION_SERVER` | Default bastion server | `user@bastion.example.com` |
-| `SCITEX_SSH_SECRET_KEY_PATH` | Default SSH (Secure Shell) private key path | `~/.ssh/id_rsa` |
-| `SCITEX_SSH_DEBUG_MODE` | Enable verbose output (`1`) | `0` |
-
-<p align="center"><sub><b>Table 3.</b> Environment variables. CLI flags take precedence when provided.</sub></p>
-
-Set these in `.env` or your shell profile to avoid repeating `-b` and `-s` flags:
-
-```bash
-export SCITEX_SSH_BASTION_SERVER=user@bastion.example.com
-export SCITEX_SSH_SECRET_KEY_PATH=~/.ssh/id_rsa
-
-# Now just specify the port
-scitex-ssh setup -p 2222
-```
 
 ## Part of SciTeX
 
