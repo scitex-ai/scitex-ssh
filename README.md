@@ -78,8 +78,6 @@ Requires `autossh` on the host machine (`sudo apt install autossh`).
 pip install scitex-ssh
 ```
 
-> **SciTeX users**: `pip install scitex` already includes tunnel support.
-
 > **Note**: `setup` and `remove` require **sudo** privileges because they write systemd service files to `/etc/systemd/system/` and run `systemctl` commands. You will be prompted for your password.
 
 > **Disclaimer**: Before setting up reverse tunnels, please check your organization's acceptable use policy and network terms of service. Reverse tunnels may bypass institutional firewalls or network policies. The authors accept no responsibility for any consequences arising from the use of this software.
