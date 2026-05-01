@@ -204,7 +204,7 @@ result = scitex_ssh.status(port=2222)
 result = scitex_ssh.remove(2222)
 ```
 
-> **[Full API reference](https://scitex-ssh.readthedocs.io/)**
+> **[Full API reference](https://scitex-ssh.readthedocs.io/en/latest/api/scitex_ssh.html)**
 
 </details>
 
@@ -223,7 +223,7 @@ scitex-ssh list-python-apis                # List Python APIs
 scitex-ssh mcp list-tools                  # List MCP (Model Context Protocol) tools
 ```
 
-> **[Full CLI reference](https://scitex-ssh.readthedocs.io/)**
+> **[Full CLI reference](https://scitex-ssh.readthedocs.io/en/latest/quickstart.html)** · run `scitex-ssh --help-recursive` for the live tree.
 
 </details>
 
@@ -246,7 +246,7 @@ AI agents can manage tunnels autonomously.
 scitex-ssh mcp start
 ```
 
-> **[Full MCP specification](https://scitex-ssh.readthedocs.io/)**
+> **[Full MCP specification](https://scitex-ssh.readthedocs.io/en/latest/api/scitex_ssh._mcp.html)** · run `scitex-ssh mcp list-tools` for the live registry.
 
 </details>
 
@@ -271,6 +271,8 @@ Code, MCP-aware tools, or `newb`):
 scitex-ssh skills list
 scitex-ssh skills get quick-start
 ```
+
+> **[Full skills directory](https://github.com/ywatanabe1989/scitex-ssh/tree/develop/src/scitex_ssh/_skills/scitex-ssh)**
 
 </details>
 
