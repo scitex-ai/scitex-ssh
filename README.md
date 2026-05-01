@@ -96,18 +96,23 @@ $EDITOR .env
 CLI flags always override env vars. The full list of variables (with
 inline comments) lives in `.env.example`.
 
-### Local state
+<details>
+<summary><strong>Local state directories</strong></summary>
+
+<br>
 
 scitex-ssh reads optional config + cache from the canonical SciTeX
 local-state locations:
 
-| Path                            | Scope         | Purpose                              |
-|---------------------------------|---------------|--------------------------------------|
+| Path                          | Scope         | Purpose                              |
+|-------------------------------|---------------|--------------------------------------|
 | `~/.scitex/ssh/`              | user-global   | per-user config, credentials, cache  |
 | `<proj-root>/.scitex/ssh/`    | project-local | overrides for the current repo       |
 
 Project-local wins when both exist. Both are optional — CLI flags or
 `.env` work without either.
+
+</details>
 
 > **Note**: `setup` and `remove` require **sudo** privileges because they write systemd service files to `/etc/systemd/system/` and run `systemctl` commands. You will be prompted for your password.
 
