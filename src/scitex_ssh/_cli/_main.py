@@ -102,9 +102,22 @@ def _default_host() -> str:
 )
 @click.option("--version", "-V", is_flag=True, help="Show version and exit.")
 @click.option("--help-recursive", is_flag=True, help="Show help for all commands.")
+@click.option(
+    "--json",
+    "as_json",
+    is_flag=True,
+    help="Emit structured JSON output (propagates to subcommands that honour it).",
+)
 @click.pass_context
-def main(ctx, version, help_recursive):
-    """scitex-ssh - SSH primitives (exec/copy/attach) and gated reverse tunnels."""
+def main(ctx, version, help_recursive, as_json):
+    """scitex-ssh - SSH primitives (exec/copy/attach) and gated reverse tunnels.
+
+    \b
+    Config is loaded with the SciTeX precedence chain:
+      config.yaml -> $SCITEX_SSH_CONFIG -> ~/.scitex/ssh/config.yaml -> defaults
+    """
+    ctx.ensure_object(dict)
+    ctx.obj["as_json"] = as_json
     if version:
         click.echo(f"scitex-ssh {_get_version()}")
         ctx.exit(0)
@@ -198,8 +211,24 @@ def _do_tunnel_status(port):
     default=None,
     help="Local host label for allowlist gating (default: local hostname).",
 )
-def tunnel_setup(port, bastion, secret_key, host):
-    """Set up a persistent SSH reverse tunnel."""
+@click.option("--dry-run", is_flag=True, help="Print plan without setting up tunnel.")
+@click.option(
+    "-y", "--yes", is_flag=True, help="Suppress interactive confirmation (assume yes)."
+)
+def tunnel_setup(port, bastion, secret_key, host, dry_run, yes):
+    """Set up a persistent SSH reverse tunnel.
+
+    \b
+    Example:
+      $ scitex-ssh tunnel setup -p 8080 -b bastion.example.com
+      $ scitex-ssh tunnel setup -p 8080 --dry-run
+    """
+    if dry_run:
+        click.echo(
+            f"DRY RUN — would set up SSH reverse tunnel "
+            f"(port={port}, bastion={bastion}, host={host or _default_host()})"
+        )
+        return
     _do_tunnel_setup(port, bastion, secret_key, host or _default_host())
 
 
@@ -210,8 +239,23 @@ def tunnel_setup(port, bastion, secret_key, host):
     default=None,
     help="Local host label for allowlist gating (default: local hostname).",
 )
-def tunnel_remove(port, host):
-    """Remove a persistent SSH reverse tunnel."""
+@click.option("--dry-run", is_flag=True, help="Print plan without removing tunnel.")
+@click.option(
+    "-y", "--yes", is_flag=True, help="Suppress interactive confirmation (assume yes)."
+)
+def tunnel_remove(port, host, dry_run, yes):
+    """Remove a persistent SSH reverse tunnel.
+
+    \b
+    Example:
+      $ scitex-ssh tunnel remove -p 8080
+      $ scitex-ssh tunnel remove -p 8080 --dry-run
+    """
+    if dry_run:
+        click.echo(
+            f"DRY RUN — would remove tunnel (port={port}, host={host or _default_host()})"
+        )
+        return
     _do_tunnel_remove(port, host or _default_host())
 
 
@@ -223,8 +267,33 @@ def tunnel_remove(port, host):
     default=None,
     help="Specific port to check (default: all).",
 )
-def tunnel_status(port):
-    """Check status of SSH reverse tunnels (informational; not gated)."""
+@click.option("--json", "as_json", is_flag=True, help="Output as JSON.")
+def tunnel_status(port, as_json):
+    """Check status of SSH reverse tunnels (informational; not gated).
+
+    \b
+    Example:
+      $ scitex-ssh tunnel status
+      $ scitex-ssh tunnel status -p 8080
+      $ scitex-ssh tunnel status --json
+    """
+    if as_json:
+        import json as _json
+
+        import scitex_ssh
+
+        result = scitex_ssh.status(port)
+        click.echo(
+            _json.dumps(
+                {
+                    "port": port,
+                    "stdout": result.get("stdout", ""),
+                    "stderr": result.get("stderr", ""),
+                },
+                indent=2,
+            )
+        )
+        return
     _do_tunnel_status(port)
 
 

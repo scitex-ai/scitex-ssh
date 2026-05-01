@@ -6,8 +6,16 @@ import click
 
 @click.command("list-python-apis")
 @click.option("-v", "--verbose", count=True, help="Verbosity (-v, -vv, -vvv).")
-def list_python_apis(verbose):
-    """List public Python API functions."""
+@click.option("--json", "as_json", is_flag=True, help="Output as JSON.")
+def list_python_apis(verbose, as_json):
+    """List public Python API functions.
+
+    \b
+    Example:
+      $ scitex-ssh list-python-apis
+      $ scitex-ssh list-python-apis -vv
+      $ scitex-ssh list-python-apis --json
+    """
     import scitex_ssh
 
     apis = [
@@ -21,6 +29,21 @@ def list_python_apis(verbose):
         ("AVAILABLE", "Whether scitex-ssh is available"),
         ("__version__", "Package version string"),
     ]
+
+    if as_json:
+        import json as _json
+
+        click.echo(
+            _json.dumps(
+                {
+                    "module": "scitex_ssh",
+                    "apis": [{"name": n, "description": d} for n, d in apis],
+                    "constants": [{"name": n, "description": d} for n, d in constants],
+                },
+                indent=2,
+            )
+        )
+        return
 
     click.echo("scitex_ssh Python API:")
     click.echo()
