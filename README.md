@@ -185,7 +185,7 @@ scitex-ssh status
 scitex-ssh remove -p 2222
 ```
 
-## Three Interfaces
+## Four Interfaces
 
 <details>
 <summary><strong>Python API ⭐</strong></summary>
@@ -249,6 +249,30 @@ scitex-ssh mcp start
 ```
 
 > **[Full MCP specification](https://scitex-ssh.readthedocs.io/)**
+
+</details>
+
+<details>
+<summary><strong>Skills ⭐⭐</strong></summary>
+
+<br>
+
+Bundled `_skills/scitex-ssh/` for AI-agent discovery (loaded by Claude
+Code, MCP-aware tools, or `newb`):
+
+| File | Purpose |
+|------|---------|
+| `SKILL.md` | Index — what this package does + tag map |
+| `01_quick-start.md` | 30-second tour |
+| `02_python-api.md` | Python API surface |
+| `10_cli-commands.md` | CLI reference |
+| `11_mcp-tools-for-ai-agents.md` | MCP tool catalog |
+| `20_environment-variables.md` | `SCITEX_SSH_*` env vars |
+
+```bash
+scitex-ssh skills list
+scitex-ssh skills get quick-start
+```
 
 </details>
 
