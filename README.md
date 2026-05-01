@@ -201,19 +201,6 @@ remove-autossh-service.sh -p 2222
 
 </details>
 
-## Quick Start
-
-```bash
-# Set up a persistent reverse tunnel
-scitex-ssh setup -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
-
-# Check tunnel status
-scitex-ssh status
-
-# Remove a tunnel
-scitex-ssh remove -p 2222
-```
-
 ## Four Interfaces
 
 <details>
@@ -239,8 +226,8 @@ result = scitex_ssh.remove(2222)
 
 </details>
 
-<details>
-<summary><strong>CLI Commands ⭐⭐⭐</strong></summary>
+<details open>
+<summary><strong>CLI Commands ⭐⭐⭐ (primary)</strong></summary>
 
 <br>
 
