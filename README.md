@@ -13,13 +13,15 @@
 </p>
 
 <!-- scitex-badges:start -->
-[![PyPI](https://img.shields.io/pypi/v/scitex-ssh.svg)](https://pypi.org/project/scitex-ssh/)
-[![Python](https://img.shields.io/pypi/pyversions/scitex-ssh.svg)](https://pypi.org/project/scitex-ssh/)
-[![Tests](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/test.yml)
-[![Install Test](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/install-test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/install-test.yml)
-[![Coverage](https://codecov.io/gh/ywatanabe1989/scitex-ssh/graph/badge.svg)](https://codecov.io/gh/ywatanabe1989/scitex-ssh)
-[![Docs](https://readthedocs.org/projects/scitex-ssh/badge/?version=latest)](https://scitex-ssh.readthedocs.io/en/latest/)
-[![License: AGPL v3](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+<p align="center">
+  <a href="https://pypi.org/project/scitex-ssh/"><img src="https://img.shields.io/pypi/v/scitex-ssh.svg" alt="PyPI"></a>
+  <a href="https://pypi.org/project/scitex-ssh/"><img src="https://img.shields.io/pypi/pyversions/scitex-ssh.svg" alt="Python"></a>
+  <a href="https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/test.yml"><img src="https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
+  <a href="https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/install-test.yml"><img src="https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/install-test.yml/badge.svg" alt="Install Test"></a>
+  <a href="https://codecov.io/gh/ywatanabe1989/scitex-ssh"><img src="https://codecov.io/gh/ywatanabe1989/scitex-ssh/graph/badge.svg" alt="Coverage"></a>
+  <a href="https://scitex-ssh.readthedocs.io/en/latest/"><img src="https://readthedocs.org/projects/scitex-ssh/badge/?version=latest" alt="Docs"></a>
+  <a href="https://www.gnu.org/licenses/agpl-3.0"><img src="https://img.shields.io/badge/license-AGPL_v3-blue.svg" alt="License: AGPL v3"></a>
+</p>
 <!-- scitex-badges:end -->
 
 > **⚠ Heads-up — acceptable use**: Before setting up reverse tunnels, check your organization's acceptable use policy and network terms of service. Reverse tunnels may bypass institutional firewalls or network policies. The authors accept no responsibility for any consequences arising from the use of this software.

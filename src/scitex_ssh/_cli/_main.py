@@ -259,7 +259,7 @@ def tunnel_remove(port, host, dry_run, yes):
     _do_tunnel_remove(port, host or _default_host())
 
 
-@tunnel.command("status")
+@tunnel.command("check-status")
 @click.option(
     "-p",
     "--port",
@@ -273,9 +273,9 @@ def tunnel_status(port, as_json):
 
     \b
     Example:
-      $ scitex-ssh tunnel status
-      $ scitex-ssh tunnel status -p 8080
-      $ scitex-ssh tunnel status --json
+      $ scitex-ssh tunnel check-status
+      $ scitex-ssh tunnel check-status -p 8080
+      $ scitex-ssh tunnel check-status --json
     """
     if as_json:
         import json as _json
@@ -295,6 +295,16 @@ def tunnel_status(port, as_json):
         )
         return
     _do_tunnel_status(port)
+
+
+@tunnel.command("status", hidden=True)
+@click.option("-p", "--port", type=int, default=None)
+@click.option("--json", "as_json", is_flag=True)
+@click.pass_context
+def tunnel_status_deprecated(ctx, port, as_json):
+    """(deprecated) Use `tunnel check-status`."""
+    _deprecation_warn("tunnel status", "tunnel check-status")
+    ctx.invoke(tunnel_status, port=port, as_json=as_json)
 
 
 # -----------------------------------------------------------------------
@@ -333,8 +343,8 @@ def remove_tunnel_deprecated(port, host):
 @main.command("show-status", hidden=True)
 @click.option("-p", "--port", type=int, default=None)
 def show_status_deprecated(port):
-    """(deprecated) Use `tunnel status`."""
-    _deprecation_warn("show-status", "tunnel status")
+    """(deprecated) Use `tunnel check-status`."""
+    _deprecation_warn("show-status", "tunnel check-status")
     _do_tunnel_status(port)
 
 
