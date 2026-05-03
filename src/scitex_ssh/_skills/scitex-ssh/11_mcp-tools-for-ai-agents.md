@@ -1,7 +1,8 @@
 ---
-name: mcp-tools-for-ai-agents
-description: ## MCP Tools (for AI agents)
-tags: [scitex-ssh, scitex-package]
+description: |
+  [TOPIC] Mcp Tools for Ai Agents
+  [DETAILS] ## MCP Tools (for AI agents).
+tags: [scitex-ssh-mcp-tools-for-ai-agents]
 ---
 
 ## MCP Tools (for AI agents)

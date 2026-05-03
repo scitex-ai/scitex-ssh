@@ -1,7 +1,8 @@
 ---
-name: quick-start
-description: Setup a tunnel (port 22 exposed via bastion) — see file body for details.
-tags: [scitex-ssh, scitex-package]
+description: |
+  [TOPIC] Setup a tunnel (port 22 exposed via bastion)
+  [DETAILS] Setup a tunnel (port 22 exposed via bastion) — see file body for details..
+tags: [scitex-ssh-quick-start]
 ---
 
 ## Quick Start

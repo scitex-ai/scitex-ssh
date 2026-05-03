@@ -1,7 +1,8 @@
 ---
-name: python-api
-description: ## Python API
-tags: [scitex-ssh, scitex-package]
+description: |
+  [TOPIC] Python Api
+  [DETAILS] ## Python API.
+tags: [scitex-ssh-python-api]
 ---
 
 ## Python API

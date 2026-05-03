@@ -1,7 +1,8 @@
 ---
-name: environment-variables
-description: ## Environment Variables
-tags: [scitex-ssh, scitex-package]
+description: |
+  [TOPIC] Environment Variables
+  [DETAILS] ## Environment Variables.
+tags: [scitex-ssh-environment-variables]
 ---
 
 ## Environment Variables
