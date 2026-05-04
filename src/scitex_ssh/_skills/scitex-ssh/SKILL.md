@@ -42,12 +42,16 @@ rule and empirical verification table.
 ## Sub-skills
 
 ### Core
-- [01_quick-start.md](01_quick-start.md) — Quick start
-- [02_python-api.md](02_python-api.md) — Python API
+- [01_installation.md](01_installation.md) — pip install + system deps + smoke verify
+- [02_quick-start.md](02_quick-start.md) — set up reverse tunnel (CLI + Python)
+- [03_python-api.md](03_python-api.md) — primitives + tunnel mgmt reference
+- [04_cli-reference.md](04_cli-reference.md) — full `scitex-ssh` subcommand surface
 
 ### Workflows
-- [10_cli-commands.md](10_cli-commands.md) — CLI commands
+- [10_cli-commands.md](10_cli-commands.md) — CLI commands (legacy)
 - [11_mcp-tools-for-ai-agents.md](11_mcp-tools-for-ai-agents.md) — MCP tools for AI agents
+- [12_quick-start.md](12_quick-start.md) — original quick-start (legacy)
+- [13_python-api.md](13_python-api.md) — original Python API page (legacy)
 
 ### Standards
 - [20_environment-variables.md](20_environment-variables.md) — Environment variables
