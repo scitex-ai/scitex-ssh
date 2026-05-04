@@ -54,4 +54,4 @@ rule and empirical verification table.
 - [13_python-api.md](13_python-api.md) — original Python API page (legacy)
 
 ### Standards
-- [20_environment-variables.md](20_environment-variables.md) — Environment variables
+- [20_env-vars.md](20_env-vars.md) — Environment variables

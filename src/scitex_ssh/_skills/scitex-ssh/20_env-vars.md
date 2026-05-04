@@ -2,7 +2,7 @@
 description: |
   [TOPIC] Environment Variables
   [DETAILS] ## Environment Variables.
-tags: [scitex-ssh-environment-variables]
+tags: [scitex-ssh-env-vars]
 ---
 
 ## Environment Variables
