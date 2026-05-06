@@ -358,5 +358,12 @@ main.add_command(attach_cmd)
 main.add_command(list_python_apis)
 main.add_command(mcp)
 
+try:
+    from scitex_dev._cli._completion import attach_shell_completion
+
+    attach_shell_completion(main, prog_name="scitex-ssh")
+except Exception:
+    pass
+
 
 # EOF
