@@ -152,7 +152,10 @@ class TestTunnelSubgroup:
             "stderr": "",
         }
         runner = CliRunner()
-        result = runner.invoke(main, ["tunnel", "status", "-p", "8080", "--json"])
+        # Use canonical `check-status` rather than deprecated `status` —
+        # the deprecated alias writes a deprecation warning to stderr
+        # which CliRunner merges into result.output, breaking json.loads.
+        result = runner.invoke(main, ["tunnel", "check-status", "-p", "8080", "--json"])
         assert result.exit_code == 0
         payload = json.loads(result.output)
         assert payload["port"] == 8080
