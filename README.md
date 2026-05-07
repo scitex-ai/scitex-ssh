@@ -301,6 +301,41 @@ scitex-ssh skills get quick-start
 
 </details>
 
+## Demo
+
+End-to-end flow — from a one-line `setup` to a remote `ssh` reaching the lab box behind NAT:
+
+```mermaid
+sequenceDiagram
+    participant Lab as Lab Workstation<br/>(behind NAT)
+    participant Sys as systemd + autossh
+    participant Bas as Bastion Server<br/>(public IP)
+    participant Cli as Remote Client
+
+    Lab->>Sys: scitex-ssh setup -p 2222 -b user@bastion -s ~/.ssh/id_rsa
+    Sys->>Sys: write autossh-tunnel-2222.service
+    Sys->>Bas: autossh -R 2222:localhost:22 (reverse tunnel)
+    Note over Sys,Bas: Tunnel persistent — survives reboots & flaky links
+    Cli->>Bas: ssh -p 2222 user@bastion
+    Bas->>Lab: forward via reverse tunnel
+    Lab-->>Cli: SSH session established
+```
+
+<p align="center"><sub><b>Figure 2.</b> Demo flow. One <code>setup</code> call installs a persistent autossh systemd unit; remote clients then reach the NAT-bound lab workstation via <code>ssh -p 2222 bastion</code>.</sub></p>
+
+```bash
+# On the lab workstation (one-time, requires sudo):
+$ scitex-ssh setup -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
+[ok] systemd unit autossh-tunnel-2222.service installed and started
+
+$ scitex-ssh status -p 2222
+autossh-tunnel-2222.service — active (running)
+
+# From any remote client:
+$ ssh -p 2222 user@bastion.example.com
+# → reaches the lab workstation through the reverse tunnel
+```
+
 ## Part of SciTeX
 
 `scitex-ssh` is part of [**SciTeX**](https://scitex.ai). Install via
