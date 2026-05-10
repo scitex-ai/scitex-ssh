@@ -9,7 +9,7 @@
 <p align="center"><b>Persistent SSH reverse tunnel for NAT traversal</b></p>
 
 <p align="center">
-  <a href="https://scitex-ssh.readthedocs.io/">Full Documentation</a> · <code>pip install scitex-ssh</code>
+  <a href="https://scitex-ssh.readthedocs.io/">Full Documentation</a> · <code>uv pip install scitex-ssh[all]</code>
 </p>
 
 <!-- scitex-badges:start -->
