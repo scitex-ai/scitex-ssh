@@ -6,14 +6,9 @@ from unittest.mock import patch
 
 import pytest
 
-try:
-    from scitex_ssh._mcp._server import create_server
+pytest.importorskip("fastmcp")
 
-    HAS_FASTMCP = True
-except ImportError:
-    HAS_FASTMCP = False
-
-pytestmark = pytest.mark.skipif(not HAS_FASTMCP, reason="fastmcp not installed")
+from scitex_ssh._mcp._server import create_server  # noqa: E402
 
 
 def _get_tool_fn(server, name):

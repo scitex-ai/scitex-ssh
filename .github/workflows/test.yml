@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -44,3 +44,21 @@ jobs:
           files: coverage.xml
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  install-check:
+    # Catches undeclared runtime deps that the package's own test suite
+    # misses: a package can build, upload, and pass its own tests with the
+    # wrong pyproject.toml — the bug only shows up when a fresh user runs
+    # `pip install <pkg>` in a clean venv. This job reproduces that path.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install + import in a fresh venv
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -e .
+          .venv/bin/python -c "import scitex_ssh; print(f'OK: {scitex_ssh.__name__}')"

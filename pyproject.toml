@@ -83,5 +83,10 @@ packages = ["src/scitex_ssh"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 
+[tool.coverage.run]
+parallel = true
+source = ["scitex_ssh"]
+concurrency = ["multiprocessing", "thread"]
+
 [tool.scitex-linter]
 library_dirs = ["src", "tests", "examples"]

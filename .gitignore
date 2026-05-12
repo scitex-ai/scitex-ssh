@@ -12,6 +12,7 @@ build/
 # Testing
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
 .mypy_cache/
 .ruff_cache/
@@ -56,6 +57,12 @@ docs/sphinx/_build/
 
 # Task management
 GITIGNORED/
+
+# scitex-dev local state — track only the human-edited config
+.scitex/*
+!.scitex/dev/
+.scitex/dev/*
+!.scitex/dev/config.yaml
 
 # Emacs
 *~
