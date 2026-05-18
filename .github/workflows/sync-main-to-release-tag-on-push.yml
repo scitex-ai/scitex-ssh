@@ -30,11 +30,9 @@ jobs:
 
           TAG="${{ github.ref_name }}"
           git fetch origin --tags
-          # Try fast-forward first (clean history when develop is ahead of main).
           if git merge --ff-only "$TAG"; then
             echo "Fast-forwarded main to $TAG."
           else
-            # Fallback: merge commit (tag not directly ahead — rare, e.g. hotfix from main).
             git merge --no-ff "$TAG" -m "merge: sync main with $TAG"
             echo "Created merge commit for $TAG."
           fi
