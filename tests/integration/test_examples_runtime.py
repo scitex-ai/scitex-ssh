@@ -12,7 +12,13 @@ from pathlib import Path
 EXAMPLES = sorted(Path(__file__).resolve().parents[2].joinpath("examples").glob("*.py"))
 
 
-def test_examples_smoke(tmp_path):
+def test_examples_smoke_examples(tmp_path):
+    # Arrange
+    # Act
+    # Assert
+    # Arrange
+    # Act
+    # Assert
     assert EXAMPLES, "No example scripts found under examples/"
     for ex in EXAMPLES:
         r = subprocess.run(

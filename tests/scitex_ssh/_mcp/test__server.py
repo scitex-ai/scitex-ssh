@@ -21,14 +21,36 @@ def _get_tool_fn(server, name):
 class TestCreateServer:
     """MCP server creation tests."""
 
-    def test_create_server_returns_fastmcp(self):
+    def test_create_server_returns_fastmcp_server_is_not_none(self):
+        # Arrange
+        # Arrange
+        # Act
         server = create_server()
+        # Act
+        # Assert
+        # Assert
         assert server is not None
+
+    def test_create_server_returns_fastmcp_server_name_equals_scitex_ssh(self):
+        # Arrange
+        # Arrange
+        # Act
+        server = create_server()
+        # Act
+        # Assert
+        # Assert
         assert server.name == "scitex-ssh"
 
+
     def test_server_registers_expected_tools(self):
+        # Arrange
+        # Arrange
         server = create_server()
+        # Act
+        # Act
         names = {t.name for t in asyncio.run(server.list_tools())}
+        # Assert
+        # Assert
         assert {"tunnel_setup", "tunnel_status", "tunnel_remove"}.issubset(names)
 
 
@@ -37,6 +59,8 @@ class TestMCPTools:
 
     @patch("scitex_ssh.setup")
     def test_tunnel_setup_delegates(self, mock_setup):
+        # Arrange
+        # Arrange
         mock_setup.return_value = {
             "success": True,
             "stdout": "started",
@@ -47,11 +71,17 @@ class TestMCPTools:
         result = tool_fn(
             port=2222, bastion_server="user@host", secret_key_path="/dev/null"
         )
+        # Act
+        # Act
         mock_setup.assert_called_once_with(2222, "user@host", "/dev/null")
+        # Assert
+        # Assert
         assert result["success"] is True
 
     @patch("scitex_ssh.status")
     def test_tunnel_status_delegates(self, mock_status):
+        # Arrange
+        # Arrange
         mock_status.return_value = {
             "success": True,
             "stdout": "active",
@@ -60,11 +90,21 @@ class TestMCPTools:
         server = create_server()
         tool_fn = _get_tool_fn(server, "tunnel_status")
         result = tool_fn(port=None)
+        # Act
+        # Act
         mock_status.assert_called_once_with(None)
+        # Assert
+        # Assert
         assert result["success"] is True
 
     @patch("scitex_ssh.status")
     def test_tunnel_status_with_port(self, mock_status):
+        # Arrange
+        # Act
+        # Assert
+        # Arrange
+        # Act
+        # Assert
         mock_status.return_value = {
             "success": True,
             "stdout": "port 2222 active",
@@ -77,6 +117,8 @@ class TestMCPTools:
 
     @patch("scitex_ssh.remove")
     def test_tunnel_remove_delegates(self, mock_remove):
+        # Arrange
+        # Arrange
         mock_remove.return_value = {
             "success": True,
             "stdout": "removed",
@@ -85,7 +127,11 @@ class TestMCPTools:
         server = create_server()
         tool_fn = _get_tool_fn(server, "tunnel_remove")
         result = tool_fn(port=2222)
+        # Act
+        # Act
         mock_remove.assert_called_once_with(2222)
+        # Assert
+        # Assert
         assert result["success"] is True
 
 
