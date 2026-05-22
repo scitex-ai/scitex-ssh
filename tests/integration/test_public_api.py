@@ -2,577 +2,406 @@
 """Integration tests for scitex_ssh public API surface.
 
 Exercises the top-level functions exposed from scitex_ssh/__init__.py
-(setup/remove/status/version) end-to-end, with subprocess and allowlist
-mocked. Lives in tests/integration/ (not tests/scitex_ssh/) because the
+(setup/remove/status/version) end-to-end using the production ``runner``
+injection kwarg + a hand-rolled ``FakeRunner`` (see
+``tests/conftest.py``) — no ``unittest.mock``, no ``monkeypatch``.
+
+Lives in tests/integration/ (not tests/scitex_ssh/) because the
 package's public API is defined in __init__.py and there is no module
-basename to mirror — this is the canonical home for cross-module surface
-tests per scitex-dev audit-project §3 / PS302.
+basename to mirror — this is the canonical home for cross-module
+surface tests per scitex-dev audit-project §3 / PS302.
 """
 
+from __future__ import annotations
+
 import os
-import subprocess
-from unittest.mock import patch
+from pathlib import Path
 
 import pytest
 
 import scitex_ssh
 
 
-@pytest.fixture(autouse=True)
-def _bypass_allowlist(monkeypatch):
-    """Allow tunnel ops in tests regardless of host config."""
+# ---------------------------------------------------------------------
+# Allowlist bypass fixture — write a real config.yaml in tmp_path and
+# point the production loader at it via the `config_path` kwarg the
+# bypass-aware helpers below thread through.
+# ---------------------------------------------------------------------
+
+
+@pytest.fixture
+def allow_all_cfg(tmp_path: Path, env_save_restore) -> Path:
+    """Write a tmp config that allows tunnels globally and point the
+    production allowlist loader at it via ``$HOME``."""
+    home = tmp_path / "home"
+    cfg_dir = home / ".scitex" / "ssh"
+    cfg_dir.mkdir(parents=True)
+    cfg = cfg_dir / "config.yaml"
+    cfg.write_text("default: {tunnels: allow}\n")
+    # CONFIG_PATH is computed at import time from $HOME; re-point HOME
+    # and rebind the module-level path so ``_require_allowed`` finds it.
+    os.environ["HOME"] = str(home)
     from scitex_ssh import _allowlist
 
-    monkeypatch.setattr(_allowlist, "is_allowed", lambda host, feature: True)
+    _allowlist.CONFIG_PATH = cfg
+    return cfg
+
+
+# ---------------------------------------------------------------------
+# Version + availability surface (no subprocess involved)
+# ---------------------------------------------------------------------
 
 
 class TestVersion:
     """Version and availability tests."""
 
-    def test_version_exists_hasattr_scitex_ssh_version(self):
+    def test_module_exposes_version_dunder_attribute(self) -> None:
         # Arrange
         # Act
+        present = hasattr(scitex_ssh, "__version__")
         # Assert
-        # Arrange
-        # Act
-        # Assert
-        assert hasattr(scitex_ssh, "__version__")
+        assert present is True
 
-    def test_version_exists_scitex_ssh_version_is_str(self):
+    def test_version_dunder_is_string_type(self) -> None:
         # Arrange
         # Act
+        v = scitex_ssh.__version__
         # Assert
-        # Arrange
-        # Act
-        # Assert
-        assert isinstance(scitex_ssh.__version__, str)
+        assert isinstance(v, str)
 
-
-    def test_version_format_len_parts_is_3(self):
-        # Arrange
+    def test_version_string_splits_into_three_dotted_parts(self) -> None:
         # Arrange
         # Act
         parts = scitex_ssh.__version__.split(".")
-        # Act
-        # Assert
         # Assert
         assert len(parts) == 3
 
-    def test_version_format_all_p_isdigit_for_p_in_parts(self):
-        # Arrange
+    def test_version_string_parts_are_all_digits(self) -> None:
         # Arrange
         # Act
         parts = scitex_ssh.__version__.split(".")
-        # Act
-        # Assert
         # Assert
         assert all(p.isdigit() for p in parts)
 
+    def test_get_version_helper_returns_dunder_version(self) -> None:
+        # Arrange
+        # Act
+        result = scitex_ssh.get_version()
+        # Assert
+        assert result == scitex_ssh.__version__
 
-    def test_get_version_scitex_ssh_get_version_scitex_ssh_version(self):
+    def test_available_module_flag_is_true(self) -> None:
         # Arrange
         # Act
+        flag = scitex_ssh.AVAILABLE
         # Assert
-        # Arrange
-        # Act
-        # Assert
-        assert scitex_ssh.get_version() == scitex_ssh.__version__
-
-    def test_available_scitex_ssh_available_is_true(self):
-        # Arrange
-        # Act
-        # Assert
-        # Arrange
-        # Act
-        # Assert
-        assert scitex_ssh.AVAILABLE is True
+        assert flag is True
 
 
 class TestScriptsDir:
     """Script directory tests."""
 
-    def test_scripts_dir_exists(self):
+    def test_scripts_dir_is_an_existing_directory(self) -> None:
         # Arrange
         # Act
+        is_dir = os.path.isdir(scitex_ssh._SCRIPTS_DIR)
         # Assert
-        # Arrange
-        # Act
-        # Assert
-        assert os.path.isdir(scitex_ssh._SCRIPTS_DIR)
+        assert is_dir is True
 
-    def test_setup_script_exists(self):
+    def test_scripts_dir_contains_setup_autossh_service_sh(self) -> None:
         # Arrange
-        # Act
-        # Arrange
-        # Act
         path = os.path.join(scitex_ssh._SCRIPTS_DIR, "setup-autossh-service.sh")
+        # Act
+        is_file = os.path.isfile(path)
         # Assert
-        # Assert
-        assert os.path.isfile(path)
+        assert is_file is True
 
-    def test_remove_script_exists(self):
+    def test_scripts_dir_contains_remove_autossh_service_sh(self) -> None:
         # Arrange
-        # Act
-        # Arrange
-        # Act
         path = os.path.join(scitex_ssh._SCRIPTS_DIR, "remove-autossh-service.sh")
+        # Act
+        is_file = os.path.isfile(path)
         # Assert
-        # Assert
-        assert os.path.isfile(path)
+        assert is_file is True
+
+
+# ---------------------------------------------------------------------
+# setup() — uses the bundled bash script via _run_script(runner=...)
+# ---------------------------------------------------------------------
 
 
 class TestSetup:
     """Tests for setup() function."""
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_setup_calls_script_result_success_is_true(self, mock_run):
+    def test_setup_returns_success_true_when_runner_returncode_zero(
+        self, fake_runner, allow_all_cfg
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="OK", stderr=""
+        fake_runner.returncode = 0
+        fake_runner.stdout = "OK"
+        # Act
+        result = scitex_ssh.setup(
+            2222,
+            "user@bastion",
+            "/home/user/.ssh/id_rsa",
+            runner=fake_runner,
         )
-        # Act
-        result = scitex_ssh.setup(2222, "user@bastion", "/home/user/.ssh/id_rsa")
-        # Act
-        # Assert
         # Assert
         assert result["success"] is True
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_setup_calls_script_result_stdout_ok(self, mock_run):
+    def test_setup_propagates_runner_stdout_into_result(
+        self, fake_runner, allow_all_cfg
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="OK", stderr=""
+        fake_runner.returncode = 0
+        fake_runner.stdout = "OK"
+        # Act
+        result = scitex_ssh.setup(
+            2222,
+            "user@bastion",
+            "/home/user/.ssh/id_rsa",
+            runner=fake_runner,
         )
-        # Act
-        result = scitex_ssh.setup(2222, "user@bastion", "/home/user/.ssh/id_rsa")
-        # Act
-        # Assert
         # Assert
         assert result["stdout"] == "OK"
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_setup_calls_script_result_stderr(self, mock_run):
+    def test_setup_propagates_runner_stderr_into_result(
+        self, fake_runner, allow_all_cfg
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="OK", stderr=""
+        fake_runner.returncode = 0
+        # Act
+        result = scitex_ssh.setup(
+            2222,
+            "user@bastion",
+            "/home/user/.ssh/id_rsa",
+            runner=fake_runner,
         )
-        # Act
-        result = scitex_ssh.setup(2222, "user@bastion", "/home/user/.ssh/id_rsa")
-        # Act
-        # Assert
         # Assert
         assert result["stderr"] == ""
 
-
-    @patch("scitex_ssh.subprocess.run")
-    def test_setup_passes_args_p_in_args(self, mock_run):
+    def test_setup_argv_includes_dash_p_port_flag(
+        self, fake_runner, allow_all_cfg
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="", stderr=""
+        # Act
+        scitex_ssh.setup(
+            5098, "admin@relay.example.com", "/tmp/key", runner=fake_runner
         )
-        scitex_ssh.setup(5098, "admin@relay.example.com", "/tmp/key")
-        # Act
-        args = mock_run.call_args[0][0]
-        # Act
         # Assert
-        # Assert
-        assert "-p" in args
+        assert "-p" in fake_runner.last_cmd
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_setup_passes_args_n_5098_in_args(self, mock_run):
+    def test_setup_argv_includes_port_number_string(
+        self, fake_runner, allow_all_cfg
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="", stderr=""
+        # Act
+        scitex_ssh.setup(
+            5098, "admin@relay.example.com", "/tmp/key", runner=fake_runner
         )
-        scitex_ssh.setup(5098, "admin@relay.example.com", "/tmp/key")
-        # Act
-        args = mock_run.call_args[0][0]
-        # Act
         # Assert
-        # Assert
-        assert "5098" in args
+        assert "5098" in fake_runner.last_cmd
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_setup_passes_args_b_in_args(self, mock_run):
+    def test_setup_argv_includes_dash_b_bastion_flag(
+        self, fake_runner, allow_all_cfg
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="", stderr=""
+        # Act
+        scitex_ssh.setup(
+            5098, "admin@relay.example.com", "/tmp/key", runner=fake_runner
         )
-        scitex_ssh.setup(5098, "admin@relay.example.com", "/tmp/key")
-        # Act
-        args = mock_run.call_args[0][0]
-        # Act
         # Assert
-        # Assert
-        assert "-b" in args
+        assert "-b" in fake_runner.last_cmd
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_setup_passes_args_admin_relay_example_com_in_args(self, mock_run):
+    def test_setup_argv_includes_bastion_address(
+        self, fake_runner, allow_all_cfg
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="", stderr=""
+        # Act
+        scitex_ssh.setup(
+            5098, "admin@relay.example.com", "/tmp/key", runner=fake_runner
         )
-        scitex_ssh.setup(5098, "admin@relay.example.com", "/tmp/key")
-        # Act
-        args = mock_run.call_args[0][0]
-        # Act
         # Assert
-        # Assert
-        assert "admin@relay.example.com" in args
+        assert "admin@relay.example.com" in fake_runner.last_cmd
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_setup_passes_args_s_in_args(self, mock_run):
+    def test_setup_argv_includes_dash_s_secret_key_flag(
+        self, fake_runner, allow_all_cfg
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="", stderr=""
+        # Act
+        scitex_ssh.setup(
+            5098, "admin@relay.example.com", "/tmp/key", runner=fake_runner
         )
-        scitex_ssh.setup(5098, "admin@relay.example.com", "/tmp/key")
-        # Act
-        args = mock_run.call_args[0][0]
-        # Act
         # Assert
-        # Assert
-        assert "-s" in args
+        assert "-s" in fake_runner.last_cmd
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_setup_passes_args_tmp_key_in_args(self, mock_run):
+    def test_setup_argv_includes_secret_key_path(
+        self, fake_runner, allow_all_cfg
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="", stderr=""
+        # Act
+        scitex_ssh.setup(
+            5098, "admin@relay.example.com", "/tmp/key", runner=fake_runner
         )
-        scitex_ssh.setup(5098, "admin@relay.example.com", "/tmp/key")
-        # Act
-        args = mock_run.call_args[0][0]
-        # Act
         # Assert
-        # Assert
-        assert "/tmp/key" in args
+        assert "/tmp/key" in fake_runner.last_cmd
 
-
-    @patch("scitex_ssh.subprocess.run")
-    def test_setup_failure_result_success_is_false(self, mock_run):
+    def test_setup_marks_nonzero_returncode_as_failure(
+        self, fake_runner, allow_all_cfg
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=1, stdout="", stderr="Permission denied"
+        fake_runner.returncode = 1
+        fake_runner.stderr = "Permission denied"
+        # Act
+        result = scitex_ssh.setup(
+            2222, "user@bastion", "/tmp/key", runner=fake_runner
         )
-        # Act
-        result = scitex_ssh.setup(2222, "user@bastion", "/tmp/key")
-        # Act
-        # Assert
         # Assert
         assert result["success"] is False
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_setup_failure_result_stderr_permission_denied(self, mock_run):
+    def test_setup_failure_propagates_runner_stderr_into_result(
+        self, fake_runner, allow_all_cfg
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=1, stdout="", stderr="Permission denied"
+        fake_runner.returncode = 1
+        fake_runner.stderr = "Permission denied"
+        # Act
+        result = scitex_ssh.setup(
+            2222, "user@bastion", "/tmp/key", runner=fake_runner
         )
-        # Act
-        result = scitex_ssh.setup(2222, "user@bastion", "/tmp/key")
-        # Act
-        # Assert
         # Assert
         assert result["stderr"] == "Permission denied"
 
+    def test_setup_env_fallback_uses_bastion_from_environment(
+        self, fake_runner, allow_all_cfg, env_save_restore
+    ) -> None:
+        # Arrange
+        os.environ["SCITEX_SSH_BASTION_SERVER"] = "env@bastion"
+        os.environ["SCITEX_SSH_SECRET_KEY_PATH"] = "/env/key"
+        # Act
+        scitex_ssh.setup(2222, runner=fake_runner)
+        # Assert
+        assert "env@bastion" in fake_runner.last_cmd
 
-    @patch("scitex_ssh.subprocess.run")
-    @patch.dict(
-        os.environ,
-        {
-            "SCITEX_SSH_BASTION_SERVER": "env@bastion",
-            "SCITEX_SSH_SECRET_KEY_PATH": "/env/key",
-        },
-    )
-    def test_setup_uses_env_vars_result_success_is_true(self, mock_run):
+    def test_setup_env_fallback_uses_secret_key_from_environment(
+        self, fake_runner, allow_all_cfg, env_save_restore
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="OK", stderr=""
-        )
+        os.environ["SCITEX_SSH_BASTION_SERVER"] = "env@bastion"
+        os.environ["SCITEX_SSH_SECRET_KEY_PATH"] = "/env/key"
         # Act
-        result = scitex_ssh.setup(2222)
-        # Act
+        scitex_ssh.setup(2222, runner=fake_runner)
         # Assert
-        # Assert
-        assert result["success"] is True
+        assert "/env/key" in fake_runner.last_cmd
 
-    @patch("scitex_ssh.subprocess.run")
-    @patch.dict(
-        os.environ,
-        {
-            "SCITEX_SSH_BASTION_SERVER": "env@bastion",
-            "SCITEX_SSH_SECRET_KEY_PATH": "/env/key",
-        },
-    )
-    def test_setup_uses_env_vars_env_bastion_in_args_result_success_is_true(self, mock_run):
+    def test_setup_raises_valueerror_when_bastion_missing_everywhere(
+        self, env_save_restore
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="OK", stderr=""
-        )
+        os.environ.pop("SCITEX_SSH_BASTION_SERVER", None)
+        os.environ.pop("SCITEX_SSH_SECRET_KEY_PATH", None)
         # Act
-        result = scitex_ssh.setup(2222)
-        # Act
+        ctx = pytest.raises(ValueError, match="bastion_server is required")
         # Assert
-        # Assert
-        assert result["success"] is True
-
-    @patch("scitex_ssh.subprocess.run")
-    @patch.dict(
-        os.environ,
-        {
-            "SCITEX_SSH_BASTION_SERVER": "env@bastion",
-            "SCITEX_SSH_SECRET_KEY_PATH": "/env/key",
-        },
-    )
-    def test_setup_uses_env_vars_env_bastion_in_args_env_bastion_in_args(self, mock_run):
-        # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="OK", stderr=""
-        )
-        # Act
-        result = scitex_ssh.setup(2222)
-        # Assert
-        assert result["success"] is True
-        args = mock_run.call_args[0][0]
-        # Act
-        # Assert
-        assert "env@bastion" in args
-
-
-    @patch("scitex_ssh.subprocess.run")
-    @patch.dict(
-        os.environ,
-        {
-            "SCITEX_SSH_BASTION_SERVER": "env@bastion",
-            "SCITEX_SSH_SECRET_KEY_PATH": "/env/key",
-        },
-    )
-    def test_setup_uses_env_vars_env_key_in_args_result_success_is_true(self, mock_run):
-        # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="OK", stderr=""
-        )
-        # Act
-        result = scitex_ssh.setup(2222)
-        # Act
-        # Assert
-        # Assert
-        assert result["success"] is True
-
-    @patch("scitex_ssh.subprocess.run")
-    @patch.dict(
-        os.environ,
-        {
-            "SCITEX_SSH_BASTION_SERVER": "env@bastion",
-            "SCITEX_SSH_SECRET_KEY_PATH": "/env/key",
-        },
-    )
-    def test_setup_uses_env_vars_env_key_in_args_env_key_in_args(self, mock_run):
-        # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="OK", stderr=""
-        )
-        # Act
-        result = scitex_ssh.setup(2222)
-        # Assert
-        assert result["success"] is True
-        args = mock_run.call_args[0][0]
-        # Act
-        # Assert
-        assert "/env/key" in args
-
-
-
-    @patch.dict(os.environ, {}, clear=True)
-    def test_setup_raises_without_bastion(self):
-        # Arrange
-        # Act
-        # Arrange
-        # Act
-        import pytest
-
-        # Assert
-        # Assert
-        with pytest.raises(ValueError, match="bastion_server is required"):
+        with ctx:
             scitex_ssh.setup(2222)
 
-    @patch.dict(
-        os.environ,
-        {"SCITEX_SSH_BASTION_SERVER": "env@bastion"},
-        clear=True,
-    )
-    def test_setup_raises_without_secret_key(self):
+    def test_setup_raises_valueerror_when_secret_key_missing_everywhere(
+        self, env_save_restore
+    ) -> None:
         # Arrange
+        os.environ.pop("SCITEX_SSH_SECRET_KEY_PATH", None)
+        os.environ["SCITEX_SSH_BASTION_SERVER"] = "env@bastion"
         # Act
-        # Arrange
-        # Act
-        import pytest
-
+        ctx = pytest.raises(ValueError, match="secret_key_path is required")
         # Assert
-        # Assert
-        with pytest.raises(ValueError, match="secret_key_path is required"):
+        with ctx:
             scitex_ssh.setup(2222)
+
+
+# ---------------------------------------------------------------------
+# remove()
+# ---------------------------------------------------------------------
 
 
 class TestRemove:
     """Tests for remove() function."""
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_remove_success_result_success_is_true(self, mock_run):
+    def test_remove_marks_zero_returncode_as_success(
+        self, fake_runner, allow_all_cfg
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="Removed", stderr=""
-        )
+        fake_runner.returncode = 0
+        fake_runner.stdout = "Removed"
         # Act
-        # Act
-        result = scitex_ssh.remove(2222)
-        # Assert
+        result = scitex_ssh.remove(2222, runner=fake_runner)
         # Assert
         assert result["success"] is True
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_remove_passes_port_p_in_args(self, mock_run):
+    def test_remove_argv_includes_dash_p_port_flag(
+        self, fake_runner, allow_all_cfg
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="", stderr=""
-        )
-        scitex_ssh.remove(5098)
         # Act
-        args = mock_run.call_args[0][0]
-        # Act
+        scitex_ssh.remove(5098, runner=fake_runner)
         # Assert
-        # Assert
-        assert "-p" in args
+        assert "-p" in fake_runner.last_cmd
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_remove_passes_port_n_5098_in_args(self, mock_run):
+    def test_remove_argv_includes_port_number_string(
+        self, fake_runner, allow_all_cfg
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="", stderr=""
-        )
-        scitex_ssh.remove(5098)
         # Act
-        args = mock_run.call_args[0][0]
-        # Act
+        scitex_ssh.remove(5098, runner=fake_runner)
         # Assert
-        # Assert
-        assert "5098" in args
+        assert "5098" in fake_runner.last_cmd
 
+
+# ---------------------------------------------------------------------
+# status()
+# ---------------------------------------------------------------------
 
 
 class TestStatus:
     """Tests for status() function."""
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_status_all_result_success_is_true(self, mock_run):
+    def test_status_all_marks_zero_returncode_as_success(self, fake_runner) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="active", stderr=""
-        )
+        fake_runner.returncode = 0
+        fake_runner.stdout = "active"
         # Act
-        result = scitex_ssh.status()
-        # Act
-        # Assert
+        result = scitex_ssh.status(runner=fake_runner)
         # Assert
         assert result["success"] is True
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_status_all_list_units_in_args_result_success_is_true(self, mock_run):
+    def test_status_all_invokes_systemctl_list_units(self, fake_runner) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="active", stderr=""
-        )
+        fake_runner.returncode = 0
         # Act
-        result = scitex_ssh.status()
-        # Act
+        scitex_ssh.status(runner=fake_runner)
         # Assert
+        assert "list-units" in fake_runner.last_cmd
+
+    def test_status_specific_port_marks_zero_returncode_as_success(
+        self, fake_runner
+    ) -> None:
+        # Arrange
+        fake_runner.returncode = 0
+        fake_runner.stdout = "active"
+        # Act
+        result = scitex_ssh.status(port=2222, runner=fake_runner)
         # Assert
         assert result["success"] is True
 
-    @patch("scitex_ssh.subprocess.run")
-    def test_status_all_list_units_in_args_list_units_in_args(self, mock_run):
+    def test_status_specific_port_targets_named_service_unit(
+        self, fake_runner
+    ) -> None:
         # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="active", stderr=""
-        )
+        fake_runner.returncode = 0
         # Act
-        result = scitex_ssh.status()
+        scitex_ssh.status(port=2222, runner=fake_runner)
         # Assert
-        assert result["success"] is True
-        args = mock_run.call_args[0][0]
-        # Act
-        # Assert
-        assert "list-units" in args
-
-
-
-    @patch("scitex_ssh.subprocess.run")
-    def test_status_specific_port_result_success_is_true(self, mock_run):
-        # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="active", stderr=""
-        )
-        # Act
-        result = scitex_ssh.status(port=2222)
-        # Act
-        # Assert
-        # Assert
-        assert result["success"] is True
-
-    @patch("scitex_ssh.subprocess.run")
-    def test_status_specific_port_autossh_tunnel_2222_service_in_args_result_success_is_true(self, mock_run):
-        # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="active", stderr=""
-        )
-        # Act
-        result = scitex_ssh.status(port=2222)
-        # Act
-        # Assert
-        # Assert
-        assert result["success"] is True
-
-    @patch("scitex_ssh.subprocess.run")
-    def test_status_specific_port_autossh_tunnel_2222_service_in_args_autossh_tunnel_2222_service_in_args(self, mock_run):
-        # Arrange
-        # Arrange
-        mock_run.return_value = subprocess.CompletedProcess(
-            args=[], returncode=0, stdout="active", stderr=""
-        )
-        # Act
-        result = scitex_ssh.status(port=2222)
-        # Assert
-        assert result["success"] is True
-        args = mock_run.call_args[0][0]
-        # Act
-        # Assert
-        assert "autossh-tunnel-2222.service" in args
-
-
+        assert "autossh-tunnel-2222.service" in fake_runner.last_cmd
 
 
 # EOF
