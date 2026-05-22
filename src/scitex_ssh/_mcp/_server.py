@@ -7,8 +7,28 @@ All tools delegate to the Python API (which delegates to shell scripts).
 from fastmcp import FastMCP
 
 
-def create_server():
-    """Create and configure the MCP server."""
+def create_server(
+    *,
+    setup_fn=None,
+    status_fn=None,
+    remove_fn=None,
+):
+    """Create and configure the MCP server.
+
+    Parameters
+    ----------
+    setup_fn, status_fn, remove_fn : callable, optional
+        Override the Python-API functions the MCP tools delegate to.
+        Defaults to ``scitex_ssh.setup`` / ``scitex_ssh.status`` /
+        ``scitex_ssh.remove``. Used by tests to inject hand-rolled
+        fakes that observe arguments without mocks.
+    """
+    import scitex_ssh
+
+    _setup = setup_fn if setup_fn is not None else scitex_ssh.setup
+    _status = status_fn if status_fn is not None else scitex_ssh.status
+    _remove = remove_fn if remove_fn is not None else scitex_ssh.remove
+
     mcp = FastMCP("scitex-ssh")
 
     @mcp.tool()
@@ -35,9 +55,7 @@ def create_server():
         dict
             Result with success, stdout, stderr keys.
         """
-        import scitex_ssh
-
-        return scitex_ssh.setup(port, bastion_server, secret_key_path)
+        return _setup(port, bastion_server, secret_key_path)
 
     @mcp.tool()
     def tunnel_status(port: int | None = None) -> dict:
@@ -53,9 +71,7 @@ def create_server():
         dict
             Result with success, stdout, stderr keys.
         """
-        import scitex_ssh
-
-        return scitex_ssh.status(port)
+        return _status(port)
 
     @mcp.tool()
     def tunnel_remove(port: int) -> dict:
@@ -71,9 +87,7 @@ def create_server():
         dict
             Result with success, stdout, stderr keys.
         """
-        import scitex_ssh
-
-        return scitex_ssh.remove(port)
+        return _remove(port)
 
     return mcp
 

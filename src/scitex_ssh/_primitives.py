@@ -25,14 +25,24 @@ def exec_remote(
     ssh_opts: Sequence[str] = (),
     check: bool = False,
     timeout: float | None = None,
+    runner=None,
 ) -> SSHResult:
     """Run a command on `host` via ssh.
 
     `ssh_opts` is a list of raw ssh flags (e.g. ['-A', '-o', 'StrictHostKeyChecking=no'])
     passed through verbatim. Users opt into agent forwarding by passing '-A' themselves.
+
+    Parameters
+    ----------
+    runner : callable, optional
+        Subprocess invoker matching ``subprocess.run``'s signature. Defaults
+        to ``subprocess.run``. Pass a hand-rolled fake from tests to observe
+        and stub the call without mocks.
     """
+    if runner is None:
+        runner = subprocess.run
     cmd = ["ssh", *ssh_opts, host, command]
-    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    proc = runner(cmd, capture_output=True, text=True, timeout=timeout)
     result = SSHResult(proc.returncode, proc.stdout, proc.stderr)
     if check and not result.success:
         raise RuntimeError(
@@ -48,8 +58,11 @@ def copy_to(
     *,
     recursive: bool = False,
     ssh_opts: Sequence[str] = (),
+    runner=None,
 ) -> SSHResult:
     """scp local `src` to `host:dest`. ssh_opts forwarded via -o."""
+    if runner is None:
+        runner = subprocess.run
     cmd = [
         "scp",
         *(["-r"] if recursive else []),
@@ -57,7 +70,7 @@ def copy_to(
         src,
         f"{host}:{dest}",
     ]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    proc = runner(cmd, capture_output=True, text=True)
     return SSHResult(proc.returncode, proc.stdout, proc.stderr)
 
 
@@ -68,8 +81,11 @@ def copy_from(
     *,
     recursive: bool = False,
     ssh_opts: Sequence[str] = (),
+    runner=None,
 ) -> SSHResult:
     """scp `host:src` to local `dest`."""
+    if runner is None:
+        runner = subprocess.run
     cmd = [
         "scp",
         *(["-r"] if recursive else []),
@@ -77,7 +93,7 @@ def copy_from(
         f"{host}:{src}",
         dest,
     ]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    proc = runner(cmd, capture_output=True, text=True)
     return SSHResult(proc.returncode, proc.stdout, proc.stderr)
 
 
