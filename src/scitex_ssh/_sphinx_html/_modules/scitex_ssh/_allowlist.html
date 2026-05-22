@@ -157,8 +157,22 @@
 <span class="n">CONFIG_PATH</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;.scitex&quot;</span> <span class="o">/</span> <span class="s2">&quot;ssh&quot;</span> <span class="o">/</span> <span class="s2">&quot;config.yaml&quot;</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">is_allowed</span><span class="p">(</span><span class="n">host</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">feature</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;tunnels&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-    <span class="n">cfg</span> <span class="o">=</span> <span class="n">_load</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_allowed</span><span class="p">(</span>
+    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">feature</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;tunnels&quot;</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">config_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return True iff `host` is allowed to use `feature`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    config_path : Path, optional</span>
+<span class="sd">        Override the config file location. Defaults to ``CONFIG_PATH``</span>
+<span class="sd">        (``~/.scitex/ssh/config.yaml``). Used by tests to point at a</span>
+<span class="sd">        real config in ``tmp_path`` without patching module globals.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">_load</span><span class="p">(</span><span class="n">config_path</span> <span class="k">if</span> <span class="n">config_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">CONFIG_PATH</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">cfg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span>  <span class="c1"># fail-closed when no config</span>
     <span class="n">hosts</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hosts&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
@@ -169,24 +183,30 @@
     <span class="k">return</span> <span class="n">default_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;allow&quot;</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">require</span><span class="p">(</span><span class="n">host</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">feature</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;tunnels&quot;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_allowed</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">feature</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">require</span><span class="p">(</span>
+    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">feature</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;tunnels&quot;</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">config_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_allowed</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">config_path</span><span class="o">=</span><span class="n">config_path</span><span class="p">):</span>
+        <span class="n">path_for_msg</span> <span class="o">=</span> <span class="n">config_path</span> <span class="k">if</span> <span class="n">config_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">CONFIG_PATH</span>
         <span class="k">raise</span> <span class="n">PolicyError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;feature </span><span class="si">{</span><span class="n">feature</span><span class="si">!r}</span><span class="s2"> is not allowed for host </span><span class="si">{</span><span class="n">host</span><span class="si">!r}</span><span class="s2">. &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;Edit </span><span class="si">{</span><span class="n">CONFIG_PATH</span><span class="si">}</span><span class="s2"> to add &#39;hosts.</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">feature</span><span class="si">}</span><span class="s2">: allow&#39; &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Edit </span><span class="si">{</span><span class="n">path_for_msg</span><span class="si">}</span><span class="s2"> to add &#39;hosts.</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">feature</span><span class="si">}</span><span class="s2">: allow&#39; &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;if your environment permits it.&quot;</span>
         <span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_load</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">CONFIG_PATH</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_load</span><span class="p">(</span><span class="n">config_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">config_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
     <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
         <span class="c1"># yaml not installed — treat as no config</span>
         <span class="k">return</span> <span class="kc">None</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">CONFIG_PATH</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
 
 
