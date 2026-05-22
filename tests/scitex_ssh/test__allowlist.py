@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Tests for scitex_ssh._allowlist."""
+"""Tests for scitex_ssh._allowlist — fail-closed per-host policy.
+
+Uses the production ``config_path`` injection kwarg + ``tmp_path`` so
+each test exercises the real YAML loader against a real file (no
+``monkeypatch.setattr`` on module globals).
+"""
 
 from __future__ import annotations
 
@@ -7,125 +12,107 @@ from pathlib import Path
 
 import pytest
 
-from scitex_ssh import _allowlist
 from scitex_ssh._allowlist import PolicyError, is_allowed, require
 
 
 @pytest.fixture
-def cfg_path(tmp_path, monkeypatch):
-    p = tmp_path / "config.yaml"
-    monkeypatch.setattr(_allowlist, "CONFIG_PATH", p)
-    return p
+def cfg_path(tmp_path: Path) -> Path:
+    """Return the on-disk config path for the test (file not yet written)."""
+    return tmp_path / "config.yaml"
 
 
-def test_no_config_fails_closed_not_cfg_path_exists(cfg_path):
+def test_missing_config_returns_false_for_any_host(cfg_path: Path) -> None:
     # Arrange
+    # (cfg_path fixture deliberately does not write the file)
     # Act
+    allowed = is_allowed("anyhost", "tunnels", config_path=cfg_path)
     # Assert
+    assert allowed is False
+
+
+def test_missing_config_raises_policyerror_on_require(cfg_path: Path) -> None:
     # Arrange
+    # (cfg_path fixture deliberately does not write the file)
     # Act
+    ctx = pytest.raises(PolicyError)
     # Assert
-    assert not cfg_path.exists()
+    with ctx:
+        require("anyhost", "tunnels", config_path=cfg_path)
 
 
-def test_no_config_fails_closed_is_allowed_anyhost_tunnels_is_false(cfg_path):
+def test_host_explicitly_allowed_returns_true(cfg_path: Path) -> None:
     # Arrange
+    cfg_path.write_text(
+        "default: {tunnels: deny}\nhosts:\n  mba: {tunnels: allow}\n"
+    )
     # Act
+    allowed = is_allowed("mba", "tunnels", config_path=cfg_path)
     # Assert
+    assert allowed is True
+
+
+def test_host_explicitly_allowed_does_not_raise_on_require(cfg_path: Path) -> None:
     # Arrange
+    cfg_path.write_text(
+        "default: {tunnels: deny}\nhosts:\n  mba: {tunnels: allow}\n"
+    )
+    completed = False
     # Act
+    require("mba", "tunnels", config_path=cfg_path)
+    completed = True
     # Assert
-    assert is_allowed("anyhost", "tunnels") is False
+    assert completed
 
 
-def test_no_config_fails_closed_raises_policyerror(cfg_path):
+def test_host_explicitly_denied_returns_false(cfg_path: Path) -> None:
     # Arrange
-    # Act
-    # Assert
-    # Arrange
-    # Act
-    # Assert
-    with pytest.raises(PolicyError):
-        require("anyhost", "tunnels")
-
-
-
-
-def test_host_explicitly_allowed(cfg_path: Path):
-    # Arrange
-    # Act
-    # Arrange
-    # Act
-    cfg_path.write_text("default: {tunnels: deny}\nhosts:\n  mba: {tunnels: allow}\n")
-    # Assert
-    # Assert
-    assert is_allowed("mba", "tunnels") is True
-    require("mba", "tunnels")  # no raise
-
-
-def test_host_explicitly_denied_is_allowed_spartan_tunnels_is_false(cfg_path: Path):
-    # Arrange
-    # Arrange
-    # Act
     cfg_path.write_text(
         "default: {tunnels: allow}\nhosts:\n  spartan: {tunnels: deny}\n"
     )
     # Act
+    allowed = is_allowed("spartan", "tunnels", config_path=cfg_path)
     # Assert
-    # Assert
-    assert is_allowed("spartan", "tunnels") is False
+    assert allowed is False
 
 
-def test_host_explicitly_denied_raises_policyerror(cfg_path: Path):
+def test_host_explicitly_denied_raises_policyerror_on_require(cfg_path: Path) -> None:
     # Arrange
-    # Arrange
-    # Act
     cfg_path.write_text(
         "default: {tunnels: allow}\nhosts:\n  spartan: {tunnels: deny}\n"
     )
     # Act
+    ctx = pytest.raises(PolicyError)
     # Assert
-    # Assert
-    with pytest.raises(PolicyError):
-        require("spartan", "tunnels")
+    with ctx:
+        require("spartan", "tunnels", config_path=cfg_path)
 
 
-
-
-def test_default_allow_unlisted(cfg_path: Path):
+def test_default_allow_grants_unlisted_host(cfg_path: Path) -> None:
     # Arrange
-    # Act
-    # Arrange
-    # Act
     cfg_path.write_text("default: {tunnels: allow}\n")
-    # Assert
-    # Assert
-    assert is_allowed("randomhost", "tunnels") is True
-
-
-def test_default_deny_unlisted_is_allowed_randomhost_tunnels_is_false(cfg_path: Path):
-    # Arrange
-    # Arrange
     # Act
+    allowed = is_allowed("randomhost", "tunnels", config_path=cfg_path)
+    # Assert
+    assert allowed is True
+
+
+def test_default_deny_blocks_unlisted_host(cfg_path: Path) -> None:
+    # Arrange
     cfg_path.write_text("default: {tunnels: deny}\n")
     # Act
+    allowed = is_allowed("randomhost", "tunnels", config_path=cfg_path)
     # Assert
-    # Assert
-    assert is_allowed("randomhost", "tunnels") is False
+    assert allowed is False
 
 
-def test_default_deny_unlisted_raises_policyerror(cfg_path: Path):
+def test_default_deny_raises_policyerror_for_unlisted_host(cfg_path: Path) -> None:
     # Arrange
-    # Arrange
-    # Act
     cfg_path.write_text("default: {tunnels: deny}\n")
     # Act
+    ctx = pytest.raises(PolicyError)
     # Assert
-    # Assert
-    with pytest.raises(PolicyError):
-        require("randomhost", "tunnels")
-
-
+    with ctx:
+        require("randomhost", "tunnels", config_path=cfg_path)
 
 
 # EOF

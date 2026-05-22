@@ -26,8 +26,22 @@ class PolicyError(RuntimeError):
 CONFIG_PATH = Path.home() / ".scitex" / "ssh" / "config.yaml"
 
 
-def is_allowed(host: str, feature: Literal["tunnels"]) -> bool:
-    cfg = _load()
+def is_allowed(
+    host: str,
+    feature: Literal["tunnels"],
+    *,
+    config_path: Path | None = None,
+) -> bool:
+    """Return True iff `host` is allowed to use `feature`.
+
+    Parameters
+    ----------
+    config_path : Path, optional
+        Override the config file location. Defaults to ``CONFIG_PATH``
+        (``~/.scitex/ssh/config.yaml``). Used by tests to point at a
+        real config in ``tmp_path`` without patching module globals.
+    """
+    cfg = _load(config_path if config_path is not None else CONFIG_PATH)
     if cfg is None:
         return False  # fail-closed when no config
     hosts = cfg.get("hosts") or {}
@@ -38,24 +52,30 @@ def is_allowed(host: str, feature: Literal["tunnels"]) -> bool:
     return default_cfg.get(feature) == "allow"
 
 
-def require(host: str, feature: Literal["tunnels"]) -> None:
-    if not is_allowed(host, feature):
+def require(
+    host: str,
+    feature: Literal["tunnels"],
+    *,
+    config_path: Path | None = None,
+) -> None:
+    if not is_allowed(host, feature, config_path=config_path):
+        path_for_msg = config_path if config_path is not None else CONFIG_PATH
         raise PolicyError(
             f"feature {feature!r} is not allowed for host {host!r}. "
-            f"Edit {CONFIG_PATH} to add 'hosts.{host}.{feature}: allow' "
+            f"Edit {path_for_msg} to add 'hosts.{host}.{feature}: allow' "
             f"if your environment permits it."
         )
 
 
-def _load() -> dict | None:
-    if not CONFIG_PATH.exists():
+def _load(config_path: Path) -> dict | None:
+    if not config_path.exists():
         return None
     try:
         import yaml
     except ImportError:
         # yaml not installed — treat as no config
         return None
-    with open(CONFIG_PATH) as f:
+    with open(config_path) as f:
         return yaml.safe_load(f) or {}
 
 

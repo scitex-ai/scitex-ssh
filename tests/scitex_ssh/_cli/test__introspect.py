@@ -1,227 +1,151 @@
 #!/usr/bin/env python3
-"""Tests for scitex_ssh._cli._introspect — `list-python-apis` command."""
+"""Tests for scitex_ssh._cli._introspect — `list-python-apis` command.
+
+All tests run real Click invocations against a live CliRunner — no
+mocks. Multi-assert variants from the prior file are collapsed via a
+shared ``json_payload`` fixture so each test stays single-assert
+(TQ007).
+"""
+
+from __future__ import annotations
 
 import json
 
+import pytest
 from click.testing import CliRunner
 
 from scitex_ssh._cli._introspect import list_python_apis
 
 
-class TestListPythonApis:
-    def test_default_lists_function_names_result_exit_code_equals_n_0(self):
-        # Arrange
+@pytest.fixture
+def json_payload() -> dict:
+    """Parsed JSON payload from `list-python-apis --json`."""
+    runner = CliRunner()
+    result = runner.invoke(list_python_apis, ["--json"])
+    assert result.exit_code == 0, result.output
+    return json.loads(result.output)
+
+
+# ---------------------------------------------------------------------
+# Default (text) output
+# ---------------------------------------------------------------------
+
+
+class TestListPythonApisDefault:
+    def test_default_invocation_exit_code_zero(self) -> None:
         # Arrange
         runner = CliRunner()
         # Act
         result = runner.invoke(list_python_apis, [])
-        # Act
-        # Assert
         # Assert
         assert result.exit_code == 0
 
-    def test_default_lists_function_names_all_name_in_result_output_for_name_in_setup_remove_status_ge(self):
-        # Arrange
+    def test_default_output_lists_all_expected_public_function_names(self) -> None:
         # Arrange
         runner = CliRunner()
+        expected = ("setup", "remove", "status", "get_version")
         # Act
         result = runner.invoke(list_python_apis, [])
-        # Act
         # Assert
-        # Assert
-        assert all(name in result.output for name in ('setup', 'remove', 'status', 'get_version'))
+        assert all(name in result.output for name in expected)
 
 
-    def test_verbose_includes_constants_result_exit_code_equals_n_0(self):
-        # Arrange
+# ---------------------------------------------------------------------
+# Verbose (-v) output — includes module constants
+# ---------------------------------------------------------------------
+
+
+class TestListPythonApisVerbose:
+    def test_verbose_invocation_exit_code_zero(self) -> None:
         # Arrange
         runner = CliRunner()
         # Act
         result = runner.invoke(list_python_apis, ["-v"])
-        # Act
-        # Assert
         # Assert
         assert result.exit_code == 0
 
-    def test_verbose_includes_constants_available_in_result_output(self):
-        # Arrange
+    def test_verbose_output_lists_available_constant_name(self) -> None:
         # Arrange
         runner = CliRunner()
         # Act
         result = runner.invoke(list_python_apis, ["-v"])
-        # Act
-        # Assert
         # Assert
         assert "AVAILABLE" in result.output
 
-    def test_verbose_includes_constants_version_in_result_output(self):
-        # Arrange
+    def test_verbose_output_lists_version_dunder_constant_name(self) -> None:
         # Arrange
         runner = CliRunner()
         # Act
         result = runner.invoke(list_python_apis, ["-v"])
-        # Act
-        # Assert
         # Assert
         assert "__version__" in result.output
 
 
-    def test_very_verbose_pulls_docstring_result_exit_code_equals_n_0(self):
-        # Arrange
+# ---------------------------------------------------------------------
+# Very-verbose (-vv) output — pulls docstrings
+# ---------------------------------------------------------------------
+
+
+class TestListPythonApisVeryVerbose:
+    def test_very_verbose_invocation_exit_code_zero(self) -> None:
         # Arrange
         runner = CliRunner()
         # Act
         result = runner.invoke(list_python_apis, ["-vv"])
-        # Act
-        # Assert
         # Assert
         assert result.exit_code == 0
 
-    def test_very_verbose_pulls_docstring_set_up_a_persistent_ssh_in_result_output(self):
-        # Arrange
+    def test_very_verbose_output_includes_setup_docstring_lead(self) -> None:
         # Arrange
         runner = CliRunner()
         # Act
         result = runner.invoke(list_python_apis, ["-vv"])
-        # Act
-        # Assert
         # Assert
         assert "Set up a persistent SSH" in result.output
 
 
-    def test_json_emits_structured_payload_result_exit_code_equals_n_0(self):
-        # Arrange
-        # Arrange
-        runner = CliRunner()
-        # Act
-        result = runner.invoke(list_python_apis, ["--json"])
-        # Act
-        # Assert
-        # Assert
-        assert result.exit_code == 0
+# ---------------------------------------------------------------------
+# --json output — structured payload (uses json_payload fixture)
+# ---------------------------------------------------------------------
 
-    def test_json_emits_structured_payload_payload_module_scitex_ssh_result_exit_code_equals_n_0(self):
-        # Arrange
-        # Arrange
-        runner = CliRunner()
-        # Act
-        result = runner.invoke(list_python_apis, ["--json"])
-        # Act
-        # Assert
-        # Assert
-        assert result.exit_code == 0
 
-    def test_json_emits_structured_payload_payload_module_scitex_ssh_payload_module_scitex_ssh(self):
-        # Arrange
+class TestListPythonApisJson:
+    def test_json_invocation_exit_code_zero(self) -> None:
         # Arrange
         runner = CliRunner()
         # Act
         result = runner.invoke(list_python_apis, ["--json"])
         # Assert
         assert result.exit_code == 0
-        payload = json.loads(result.output)
-        # Act
-        # Assert
-        assert payload["module"] == "scitex_ssh"
 
+    def test_json_payload_module_field_matches_canonical_import_name(
+        self, json_payload: dict
+    ) -> None:
+        # Arrange
+        # Act
+        module = json_payload["module"]
+        # Assert
+        assert module == "scitex_ssh"
 
-    def test_json_emits_structured_payload_setup_remove_status_get_version_issubset_api_names_result_exit_code_equals_n_0(self):
+    def test_json_payload_apis_includes_all_expected_public_function_names(
+        self, json_payload: dict
+    ) -> None:
         # Arrange
-        # Arrange
-        runner = CliRunner()
+        expected = {"setup", "remove", "status", "get_version"}
         # Act
-        result = runner.invoke(list_python_apis, ["--json"])
-        # Act
+        api_names = {item["name"] for item in json_payload["apis"]}
         # Assert
-        # Assert
-        assert result.exit_code == 0
+        assert expected.issubset(api_names)
 
-    def test_json_emits_structured_payload_setup_remove_status_get_version_issubset_api_names_payload_module_scitex_ssh(self):
+    def test_json_payload_constants_includes_available_and_version(
+        self, json_payload: dict
+    ) -> None:
         # Arrange
-        # Arrange
-        runner = CliRunner()
+        expected = {"AVAILABLE", "__version__"}
         # Act
-        result = runner.invoke(list_python_apis, ["--json"])
+        const_names = {item["name"] for item in json_payload["constants"]}
         # Assert
-        assert result.exit_code == 0
-        payload = json.loads(result.output)
-        # Act
-        # Assert
-        assert payload["module"] == "scitex_ssh"
-
-    def test_json_emits_structured_payload_setup_remove_status_get_version_issubset_api_names_setup_remove_status_get_version_issubset_api_names(self):
-        # Arrange
-        # Arrange
-        runner = CliRunner()
-        # Act
-        result = runner.invoke(list_python_apis, ["--json"])
-        # Assert
-        assert result.exit_code == 0
-        payload = json.loads(result.output)
-        assert payload["module"] == "scitex_ssh"
-        api_names = {item["name"] for item in payload["apis"]}
-        # Act
-        # Assert
-        assert {"setup", "remove", "status", "get_version"}.issubset(api_names)
-
-
-    def test_json_emits_structured_payload_available_version_issubset_const_names_result_exit_code_equals_n_0(self):
-        # Arrange
-        # Arrange
-        runner = CliRunner()
-        # Act
-        result = runner.invoke(list_python_apis, ["--json"])
-        # Act
-        # Assert
-        # Assert
-        assert result.exit_code == 0
-
-    def test_json_emits_structured_payload_available_version_issubset_const_names_payload_module_scitex_ssh(self):
-        # Arrange
-        # Arrange
-        runner = CliRunner()
-        # Act
-        result = runner.invoke(list_python_apis, ["--json"])
-        # Assert
-        assert result.exit_code == 0
-        payload = json.loads(result.output)
-        # Act
-        # Assert
-        assert payload["module"] == "scitex_ssh"
-
-    def test_json_emits_structured_payload_available_version_issubset_const_names_setup_remove_status_get_version_issubset_api_names(self):
-        # Arrange
-        # Arrange
-        runner = CliRunner()
-        # Act
-        result = runner.invoke(list_python_apis, ["--json"])
-        # Assert
-        assert result.exit_code == 0
-        payload = json.loads(result.output)
-        assert payload["module"] == "scitex_ssh"
-        api_names = {item["name"] for item in payload["apis"]}
-        # Act
-        # Assert
-        assert {"setup", "remove", "status", "get_version"}.issubset(api_names)
-
-    def test_json_emits_structured_payload_available_version_issubset_const_names_available_version_issubset_const_names(self):
-        # Arrange
-        # Arrange
-        runner = CliRunner()
-        # Act
-        result = runner.invoke(list_python_apis, ["--json"])
-        # Assert
-        assert result.exit_code == 0
-        payload = json.loads(result.output)
-        assert payload["module"] == "scitex_ssh"
-        api_names = {item["name"] for item in payload["apis"]}
-        assert {"setup", "remove", "status", "get_version"}.issubset(api_names)
-        const_names = {item["name"] for item in payload["constants"]}
-        # Act
-        # Assert
-        assert {"AVAILABLE", "__version__"}.issubset(const_names)
-
-
+        assert expected.issubset(const_names)
 
 
 # EOF

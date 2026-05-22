@@ -140,12 +140,14 @@ def tunnel():
     """Manage persistent SSH reverse tunnels (allowlist-gated)."""
 
 
-def _do_tunnel_setup(port, bastion, secret_key, host):
+def _do_tunnel_setup(port, bastion, secret_key, host, *, setup_fn=None):
     import scitex_ssh
     from scitex_ssh._allowlist import PolicyError
 
+    if setup_fn is None:
+        setup_fn = scitex_ssh.setup
     try:
-        result = scitex_ssh.setup(port, bastion, secret_key, host=host)
+        result = setup_fn(port, bastion, secret_key, host=host)
     except PolicyError as e:
         click.secho(f"ERROR: {e}", fg="red", err=True)
         raise SystemExit(2)
@@ -163,12 +165,14 @@ def _do_tunnel_setup(port, bastion, secret_key, host):
         raise SystemExit(1)
 
 
-def _do_tunnel_remove(port, host):
+def _do_tunnel_remove(port, host, *, remove_fn=None):
     import scitex_ssh
     from scitex_ssh._allowlist import PolicyError
 
+    if remove_fn is None:
+        remove_fn = scitex_ssh.remove
     try:
-        result = scitex_ssh.remove(port, host=host)
+        result = remove_fn(port, host=host)
     except PolicyError as e:
         click.secho(f"ERROR: {e}", fg="red", err=True)
         raise SystemExit(2)
@@ -183,10 +187,12 @@ def _do_tunnel_remove(port, host):
         raise SystemExit(1)
 
 
-def _do_tunnel_status(port):
+def _do_tunnel_status(port, *, status_fn=None):
     import scitex_ssh
 
-    result = scitex_ssh.status(port)
+    if status_fn is None:
+        status_fn = scitex_ssh.status
+    result = status_fn(port)
     click.echo(result["stdout"])
     if result["stderr"]:
         click.echo(result["stderr"], err=True)
