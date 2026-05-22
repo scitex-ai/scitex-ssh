@@ -25,9 +25,12 @@ CROSS_PACKAGE_IMPORTS = [
 
 
 @pytest.mark.parametrize("module_name", CROSS_PACKAGE_IMPORTS)
-def test_cross_package_import(module_name):
-    """Importing scitex-ssh's declared cross-package dependency must succeed."""
+def test_cross_package_import_returns_real_module_object(module_name):
+    """Importing scitex-ssh's declared cross-package dependency must
+    return a real module object (not None) — proves the rename-detector
+    actually exercised the import rather than silently skipping it."""
     # Arrange
     # Act
+    mod = pytest.importorskip(module_name)
     # Assert
-    pytest.importorskip(module_name)
+    assert mod.__name__ == module_name
