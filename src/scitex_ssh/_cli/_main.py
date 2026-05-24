@@ -140,12 +140,14 @@ def tunnel():
     """Manage persistent SSH reverse tunnels (allowlist-gated)."""
 
 
-def _do_tunnel_setup(port, bastion, secret_key, host):
+def _do_tunnel_setup(port, bastion, secret_key, host, *, setup_fn=None):
     import scitex_ssh
     from scitex_ssh._allowlist import PolicyError
 
+    if setup_fn is None:
+        setup_fn = scitex_ssh.setup
     try:
-        result = scitex_ssh.setup(port, bastion, secret_key, host=host)
+        result = setup_fn(port, bastion, secret_key, host=host)
     except PolicyError as e:
         click.secho(f"ERROR: {e}", fg="red", err=True)
         raise SystemExit(2)
@@ -163,12 +165,14 @@ def _do_tunnel_setup(port, bastion, secret_key, host):
         raise SystemExit(1)
 
 
-def _do_tunnel_remove(port, host):
+def _do_tunnel_remove(port, host, *, remove_fn=None):
     import scitex_ssh
     from scitex_ssh._allowlist import PolicyError
 
+    if remove_fn is None:
+        remove_fn = scitex_ssh.remove
     try:
-        result = scitex_ssh.remove(port, host=host)
+        result = remove_fn(port, host=host)
     except PolicyError as e:
         click.secho(f"ERROR: {e}", fg="red", err=True)
         raise SystemExit(2)
@@ -183,10 +187,12 @@ def _do_tunnel_remove(port, host):
         raise SystemExit(1)
 
 
-def _do_tunnel_status(port):
+def _do_tunnel_status(port, *, status_fn=None):
     import scitex_ssh
 
-    result = scitex_ssh.status(port)
+    if status_fn is None:
+        status_fn = scitex_ssh.status
+    result = status_fn(port)
     click.echo(result["stdout"])
     if result["stderr"]:
         click.echo(result["stderr"], err=True)
@@ -259,7 +265,7 @@ def tunnel_remove(port, host, dry_run, yes):
     _do_tunnel_remove(port, host or _default_host())
 
 
-@tunnel.command("status")
+@tunnel.command("check-status")
 @click.option(
     "-p",
     "--port",
@@ -273,9 +279,9 @@ def tunnel_status(port, as_json):
 
     \b
     Example:
-      $ scitex-ssh tunnel status
-      $ scitex-ssh tunnel status -p 8080
-      $ scitex-ssh tunnel status --json
+      $ scitex-ssh tunnel check-status
+      $ scitex-ssh tunnel check-status -p 8080
+      $ scitex-ssh tunnel check-status --json
     """
     if as_json:
         import json as _json
@@ -295,6 +301,16 @@ def tunnel_status(port, as_json):
         )
         return
     _do_tunnel_status(port)
+
+
+@tunnel.command("status", hidden=True)
+@click.option("-p", "--port", type=int, default=None)
+@click.option("--json", "as_json", is_flag=True)
+@click.pass_context
+def tunnel_status_deprecated(ctx, port, as_json):
+    """(deprecated) Use `tunnel check-status`."""
+    _deprecation_warn("tunnel status", "tunnel check-status")
+    ctx.invoke(tunnel_status, port=port, as_json=as_json)
 
 
 # -----------------------------------------------------------------------
@@ -333,8 +349,8 @@ def remove_tunnel_deprecated(port, host):
 @main.command("show-status", hidden=True)
 @click.option("-p", "--port", type=int, default=None)
 def show_status_deprecated(port):
-    """(deprecated) Use `tunnel status`."""
-    _deprecation_warn("show-status", "tunnel status")
+    """(deprecated) Use `tunnel check-status`."""
+    _deprecation_warn("show-status", "tunnel check-status")
     _do_tunnel_status(port)
 
 
@@ -347,6 +363,13 @@ main.add_command(copy_cmd)
 main.add_command(attach_cmd)
 main.add_command(list_python_apis)
 main.add_command(mcp)
+
+try:
+    from scitex_dev._cli._completion import attach_shell_completion
+
+    attach_shell_completion(main, prog_name="scitex-ssh")
+except Exception:
+    pass
 
 
 # EOF

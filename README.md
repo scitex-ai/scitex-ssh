@@ -9,17 +9,19 @@
 <p align="center"><b>Persistent SSH reverse tunnel for NAT traversal</b></p>
 
 <p align="center">
-  <a href="https://scitex-ssh.readthedocs.io/">Full Documentation</a> · <code>pip install scitex-ssh</code>
+  <a href="https://scitex-ssh.readthedocs.io/">Full Documentation</a> · <code>uv pip install scitex-ssh[all]</code>
 </p>
 
 <!-- scitex-badges:start -->
-[![PyPI](https://img.shields.io/pypi/v/scitex-ssh.svg)](https://pypi.org/project/scitex-ssh/)
-[![Python](https://img.shields.io/pypi/pyversions/scitex-ssh.svg)](https://pypi.org/project/scitex-ssh/)
-[![Tests](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/test.yml)
-[![Install Test](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/install-test.yml/badge.svg)](https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/install-test.yml)
-[![Coverage](https://codecov.io/gh/ywatanabe1989/scitex-ssh/graph/badge.svg)](https://codecov.io/gh/ywatanabe1989/scitex-ssh)
-[![Docs](https://readthedocs.org/projects/scitex-ssh/badge/?version=latest)](https://scitex-ssh.readthedocs.io/en/latest/)
-[![License: AGPL v3](https://img.shields.io/badge/license-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+<p align="center">
+  <a href="https://pypi.org/project/scitex-ssh/"><img src="https://img.shields.io/pypi/v/scitex-ssh?label=pypi" alt="pypi"></a>
+  <a href="https://pypi.org/project/scitex-ssh/"><img src="https://img.shields.io/pypi/pyversions/scitex-ssh?label=python" alt="python"></a>
+  <a href="https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/rtd-sphinx-build-on-ubuntu-latest.yml"><img src="https://img.shields.io/github/actions/workflow/status/ywatanabe1989/scitex-ssh/rtd-sphinx-build-on-ubuntu-latest.yml?branch=develop&label=docs" alt="docs"></a>
+</p>
+<p align="center">
+  <a href="https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/pytest-matrix-on-ubuntu-py3-11-3-12-3-13.yml"><img src="https://img.shields.io/github/actions/workflow/status/ywatanabe1989/scitex-ssh/pytest-matrix-on-ubuntu-py3-11-3-12-3-13.yml?branch=develop&label=tests" alt="tests"></a>
+  <a href="https://codecov.io/gh/ywatanabe1989/scitex-ssh"><img src="https://img.shields.io/codecov/c/github/ywatanabe1989/scitex-ssh/develop?label=cov" alt="cov"></a>
+</p>
 <!-- scitex-badges:end -->
 
 > **⚠ Heads-up — acceptable use**: Before setting up reverse tunnels, check your organization's acceptable use policy and network terms of service. Reverse tunnels may bypass institutional firewalls or network policies. The authors accept no responsibility for any consequences arising from the use of this software.
@@ -298,6 +300,41 @@ scitex-ssh skills get quick-start
 > **[Full skills directory](https://github.com/ywatanabe1989/scitex-ssh/tree/develop/src/scitex_ssh/_skills/scitex-ssh)**
 
 </details>
+
+## Demo
+
+End-to-end flow — from a one-line `setup` to a remote `ssh` reaching the lab box behind NAT:
+
+```mermaid
+sequenceDiagram
+    participant Lab as Lab Workstation<br/>(behind NAT)
+    participant Sys as systemd + autossh
+    participant Bas as Bastion Server<br/>(public IP)
+    participant Cli as Remote Client
+
+    Lab->>Sys: scitex-ssh setup -p 2222 -b user@bastion -s ~/.ssh/id_rsa
+    Sys->>Sys: write autossh-tunnel-2222.service
+    Sys->>Bas: autossh -R 2222:localhost:22 (reverse tunnel)
+    Note over Sys,Bas: Tunnel persistent — survives reboots & flaky links
+    Cli->>Bas: ssh -p 2222 user@bastion
+    Bas->>Lab: forward via reverse tunnel
+    Lab-->>Cli: SSH session established
+```
+
+<p align="center"><sub><b>Figure 2.</b> Demo flow. One <code>setup</code> call installs a persistent autossh systemd unit; remote clients then reach the NAT-bound lab workstation via <code>ssh -p 2222 bastion</code>.</sub></p>
+
+```bash
+# On the lab workstation (one-time, requires sudo):
+$ scitex-ssh setup -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
+[ok] systemd unit autossh-tunnel-2222.service installed and started
+
+$ scitex-ssh status -p 2222
+autossh-tunnel-2222.service — active (running)
+
+# From any remote client:
+$ ssh -p 2222 user@bastion.example.com
+# → reaches the lab workstation through the reverse tunnel
+```
 
 ## Part of SciTeX
 

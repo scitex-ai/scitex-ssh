@@ -49,12 +49,30 @@ _SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), "scripts")
 
 
 def _run_script(
-    script_name: str, args: list[str] | None = None
+    script_name: str,
+    args: list[str] | None = None,
+    *,
+    runner=None,
+    scripts_dir: str | None = None,
 ) -> subprocess.CompletedProcess:
-    """Run a bundled bash script."""
-    script_path = os.path.join(_SCRIPTS_DIR, script_name)
+    """Run a bundled bash script.
+
+    Parameters
+    ----------
+    runner : callable, optional
+        Subprocess invoker with the same shape as ``subprocess.run``.
+        Defaults to ``subprocess.run``. Pass a hand-rolled fake from
+        tests to observe and stub the call without mocks.
+    scripts_dir : str, optional
+        Override the directory containing the bundled scripts. Defaults
+        to the package's ``scripts/`` directory.
+    """
+    if runner is None:
+        runner = subprocess.run
+    base = scripts_dir if scripts_dir is not None else _SCRIPTS_DIR
+    script_path = os.path.join(base, script_name)
     cmd = ["bash", script_path] + (args or [])
-    return subprocess.run(cmd, capture_output=True, text=True)
+    return runner(cmd, capture_output=True, text=True)
 
 
 def _local_host() -> str:
@@ -67,6 +85,8 @@ def setup(
     secret_key_path: str | None = None,
     *,
     host: str | None = None,
+    runner=None,
+    scripts_dir: str | None = None,
 ) -> dict:
     """Set up a persistent SSH reverse tunnel.
 
@@ -111,6 +131,8 @@ def setup(
     result = _run_script(
         "setup-autossh-service.sh",
         ["-p", str(port), "-b", bastion_server, "-s", secret_key_path],
+        runner=runner,
+        scripts_dir=scripts_dir,
     )
     return {
         "success": result.returncode == 0,
@@ -119,7 +141,13 @@ def setup(
     }
 
 
-def remove(port: int, *, host: str | None = None) -> dict:
+def remove(
+    port: int,
+    *,
+    host: str | None = None,
+    runner=None,
+    scripts_dir: str | None = None,
+) -> dict:
     """Remove a persistent SSH reverse tunnel.
 
     Parameters
@@ -135,7 +163,12 @@ def remove(port: int, *, host: str | None = None) -> dict:
         Result with 'success', 'stdout', 'stderr' keys.
     """
     _require_allowed(host or _local_host(), "tunnels")
-    result = _run_script("remove-autossh-service.sh", ["-p", str(port)])
+    result = _run_script(
+        "remove-autossh-service.sh",
+        ["-p", str(port)],
+        runner=runner,
+        scripts_dir=scripts_dir,
+    )
     return {
         "success": result.returncode == 0,
         "stdout": result.stdout,
@@ -143,7 +176,7 @@ def remove(port: int, *, host: str | None = None) -> dict:
     }
 
 
-def status(port: int | None = None) -> dict:
+def status(port: int | None = None, *, runner=None) -> dict:
     """Check status of SSH reverse tunnels.
 
     Parameters
@@ -165,7 +198,9 @@ def status(port: int | None = None) -> dict:
         ]
     else:
         cmd = ["systemctl", "list-units", "autossh-tunnel-*", "--no-pager"]
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    if runner is None:
+        runner = subprocess.run
+    result = runner(cmd, capture_output=True, text=True)
     return {
         "success": result.returncode == 0,
         "stdout": result.stdout,

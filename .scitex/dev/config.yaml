@@ -1,0 +1,6 @@
+# Per-package config for scitex-dev audit/tools.
+# See: 01_ecosystem_06_local-state-directories.md
+audit:
+  root-whitelist:
+    files:
+      - codecov.yml  # codecov.io reads this only from repo root; cannot relocate

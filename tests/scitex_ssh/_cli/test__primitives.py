@@ -1,7 +1,17 @@
 #!/usr/bin/env python3
-"""Tests for scitex_ssh._cli._primitives — exec/copy/attach CLI commands."""
+"""Tests for scitex_ssh._cli._primitives — exec/copy/attach CLI commands.
 
-from unittest.mock import MagicMock, patch
+No mocks. Pure helpers are tested directly; exec/copy invoke the real
+`exec_remote`/`copy_to`/`copy_from` against a fake ssh/scp on $PATH
+(subprocess_shim); attach runs the real CLI as a subprocess so its
+`os.execvp` replaces the child, not pytest.
+"""
+
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
 
 from click.testing import CliRunner
 
@@ -15,113 +25,251 @@ from scitex_ssh._cli._primitives import (
 
 
 class TestSplitOpts:
-    def test_none_returns_empty(self):
-        assert _split_opts(None) == []
+    def test_none_returns_empty_list(self):
+        # Arrange
+        # Act
+        result = _split_opts(None)
+        # Assert
+        assert result == []
 
-    def test_empty_string_returns_empty(self):
-        assert _split_opts("") == []
+    def test_empty_string_returns_empty_list(self):
+        # Arrange
+        # Act
+        result = _split_opts("")
+        # Assert
+        assert result == []
 
-    def test_shell_quoted_split(self):
-        assert _split_opts("-A -o StrictHostKeyChecking=no") == [
-            "-A",
-            "-o",
-            "StrictHostKeyChecking=no",
-        ]
+    def test_shell_quoted_string_splits_into_tokens(self):
+        # Arrange
+        # Act
+        result = _split_opts("-A -o StrictHostKeyChecking=no")
+        # Assert
+        assert result == ["-A", "-o", "StrictHostKeyChecking=no"]
 
 
 class TestSplitHostPath:
-    def test_remote_host_path(self):
-        assert _split_host_path("myhost:/tmp/file") == ("myhost", "/tmp/file")
+    def test_remote_host_path_splits_into_host_and_path(self):
+        # Arrange
+        # Act
+        result = _split_host_path("myhost:/tmp/file")
+        # Assert
+        assert result == ("myhost", "/tmp/file")
 
-    def test_absolute_local_path(self):
-        assert _split_host_path("/tmp/file") == (None, "/tmp/file")
+    def test_absolute_local_path_has_no_host(self):
+        # Arrange
+        # Act
+        result = _split_host_path("/tmp/file")
+        # Assert
+        assert result == (None, "/tmp/file")
 
-    def test_relative_local_path(self):
-        assert _split_host_path("./file") == (None, "./file")
+    def test_relative_local_path_has_no_host(self):
+        # Arrange
+        # Act
+        result = _split_host_path("./file")
+        # Assert
+        assert result == (None, "./file")
 
-    def test_bare_local_filename(self):
-        # No colon → local.
-        assert _split_host_path("file.txt") == (None, "file.txt")
+    def test_bare_local_filename_has_no_host(self):
+        # Arrange — no colon → local.
+        # Act
+        result = _split_host_path("file.txt")
+        # Assert
+        assert result == (None, "file.txt")
 
-    def test_host_with_slash_treated_as_local(self):
-        # A "host" containing `/` is not a real host (fallback safety net).
-        assert _split_host_path("foo/bar:baz") == (None, "foo/bar:baz")
+    def test_host_containing_slash_is_treated_as_local(self):
+        # Arrange — a "host" with `/` is not a real host (fallback safety net).
+        # Act
+        result = _split_host_path("foo/bar:baz")
+        # Assert
+        assert result == (None, "foo/bar:baz")
 
 
 class TestExecCmd:
-    def test_dry_run(self):
+    def test_dry_run_exits_zero(self):
+        # Arrange
         runner = CliRunner()
+        # Act
         result = runner.invoke(exec_cmd, ["myhost", "uname -a", "--dry-run"])
+        # Assert
         assert result.exit_code == 0
+
+    def test_dry_run_output_announces_dry_run(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(exec_cmd, ["myhost", "uname -a", "--dry-run"])
+        # Assert
         assert "DRY RUN" in result.output
+
+    def test_dry_run_output_names_the_host(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(exec_cmd, ["myhost", "uname -a", "--dry-run"])
+        # Assert
         assert "myhost" in result.output
 
-    @patch("scitex_ssh.exec_remote")
-    def test_invokes_exec_remote(self, mock_exec):
-        mock_exec.return_value = MagicMock(stdout="ok\n", stderr="", returncode=0)
+    def test_exec_against_fake_ssh_exits_zero(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("ssh", rc=0, stdout="ok\n")
         runner = CliRunner()
+        # Act
         result = runner.invoke(exec_cmd, ["myhost", "uname -a"])
+        # Assert
         assert result.exit_code == 0
-        assert "ok" in result.output
-        mock_exec.assert_called_once()
 
-    @patch("scitex_ssh.exec_remote")
-    def test_propagates_returncode(self, mock_exec):
-        mock_exec.return_value = MagicMock(stdout="", stderr="boom\n", returncode=7)
+    def test_exec_streams_remote_stdout_to_output(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("ssh", rc=0, stdout="ok\n")
         runner = CliRunner()
+        # Act
+        result = runner.invoke(exec_cmd, ["myhost", "uname -a"])
+        # Assert
+        assert "ok" in result.output
+
+    def test_exec_propagates_nonzero_returncode(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("ssh", rc=7, stderr="boom\n")
+        runner = CliRunner()
+        # Act
         result = runner.invoke(exec_cmd, ["myhost", "false"])
+        # Assert
         assert result.exit_code == 7
+
+    def test_exec_streams_remote_stderr_to_output(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("ssh", rc=7, stderr="boom\n")
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(exec_cmd, ["myhost", "false"])
+        # Assert
         assert "boom" in result.output
 
 
 class TestCopyCmd:
-    def test_dry_run(self):
+    def test_dry_run_exits_zero(self):
+        # Arrange
         runner = CliRunner()
+        # Act
         result = runner.invoke(
             copy_cmd, ["local.txt", "myhost:/tmp/local.txt", "--dry-run"]
         )
+        # Assert
         assert result.exit_code == 0
+
+    def test_dry_run_output_announces_dry_run(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(
+            copy_cmd, ["local.txt", "myhost:/tmp/local.txt", "--dry-run"]
+        )
+        # Assert
         assert "DRY RUN" in result.output
 
-    def test_local_to_local_errors(self):
+    def test_local_to_local_copy_exits_two(self):
+        # Arrange
         runner = CliRunner()
+        # Act
         result = runner.invoke(copy_cmd, ["./a", "./b"])
+        # Assert
         assert result.exit_code == 2
+
+    def test_local_to_local_copy_reports_host_path_required(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(copy_cmd, ["./a", "./b"])
+        # Assert
         assert "must be HOST:PATH" in result.output
 
-    def test_remote_to_remote_errors(self):
+    def test_remote_to_remote_copy_exits_two(self):
+        # Arrange
         runner = CliRunner()
+        # Act
         result = runner.invoke(copy_cmd, ["host1:/a", "host2:/b"])
+        # Assert
         assert result.exit_code == 2
+
+    def test_remote_to_remote_copy_reports_unsupported(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(copy_cmd, ["host1:/a", "host2:/b"])
+        # Assert
         assert "remote-to-remote" in result.output
 
-    @patch("scitex_ssh.copy_to")
-    def test_copy_to_remote(self, mock_copy_to):
-        mock_copy_to.return_value = MagicMock(stdout="", stderr="", returncode=0)
+    def test_copy_to_remote_exits_zero(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("scp", rc=0)
         runner = CliRunner()
+        # Act
         result = runner.invoke(copy_cmd, ["./local.txt", "myhost:/tmp/local.txt"])
+        # Assert
         assert result.exit_code == 0
-        mock_copy_to.assert_called_once()
 
-    @patch("scitex_ssh.copy_from")
-    def test_copy_from_remote(self, mock_copy_from):
-        mock_copy_from.return_value = MagicMock(stdout="", stderr="", returncode=0)
+    def test_copy_to_remote_invokes_scp_once(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("scp", rc=0)
         runner = CliRunner()
+        # Act
+        runner.invoke(copy_cmd, ["./local.txt", "myhost:/tmp/local.txt"])
+        # Assert
+        assert subprocess_shim.call_count("scp") == 1
+
+    def test_copy_from_remote_exits_zero(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("scp", rc=0)
+        runner = CliRunner()
+        # Act
         result = runner.invoke(copy_cmd, ["myhost:/etc/hostname", "./hostname"])
+        # Assert
         assert result.exit_code == 0
-        mock_copy_from.assert_called_once()
+
+    def test_copy_from_remote_builds_remote_source_argv(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("scp", rc=0)
+        runner = CliRunner()
+        # Act
+        runner.invoke(copy_cmd, ["myhost:/etc/hostname", "./hostname"])
+        # Assert
+        assert subprocess_shim.argv("scp") == ["myhost:/etc/hostname", "./hostname"]
+
+
+def _run_attach(host, *, bin_dir):
+    """Run `python -m scitex_ssh attach <host>` as a real subprocess.
+
+    attach() calls os.execvp(["ssh", "-t", host]) which replaces the
+    child process — running in-process via CliRunner would replace
+    pytest itself. A real subprocess with a fake `ssh` on $PATH lets the
+    execvp succeed against the fake and surfaces the fake's exit code.
+    """
+    env = dict(os.environ)
+    env["PATH"] = f"{bin_dir}{os.pathsep}{env.get('PATH', '')}"
+    return subprocess.run(
+        [sys.executable, "-m", "scitex_ssh", "attach", host],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
 
 
 class TestAttachCmd:
-    @patch("scitex_ssh.attach")
-    def test_attach_invokes_with_host(self, mock_attach):
-        mock_attach.return_value = 0
-        runner = CliRunner()
-        result = runner.invoke(attach_cmd, ["myhost"])
-        assert result.exit_code == 0
-        mock_attach.assert_called_once()
-        args, _ = mock_attach.call_args
-        assert args[0] == "myhost"
+    def test_attach_execs_into_ssh_and_returns_its_exit_code(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("ssh", rc=0)
+        # Act
+        proc = _run_attach("myhost", bin_dir=subprocess_shim.bin_dir)
+        # Assert
+        assert proc.returncode == 0
+
+    def test_attach_passes_host_to_ssh_argv(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("ssh", rc=0)
+        # Act
+        _run_attach("myhost", bin_dir=subprocess_shim.bin_dir)
+        # Assert
+        assert subprocess_shim.argv("ssh") == ["-t", "myhost"]
 
 
 # EOF

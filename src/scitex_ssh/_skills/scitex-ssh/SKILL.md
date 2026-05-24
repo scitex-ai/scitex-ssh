@@ -1,5 +1,10 @@
 ---
-description: Persistent, auto-reconnecting SSH reverse tunnels for NAT traversal — installs an `autossh` systemd unit on the local host so a bastion/relay server can SSH back in even through firewalls and dynamic IPs. Python API — `setup(port, bastion_server=, secret_key_path=)`, `remove(port)`, `status(port=None)`, `get_version()`. Defaults read from env vars `SCITEX_SSH_BASTION_SERVER` and `SCITEX_SSH_SECRET_KEY_PATH`. 3 MCP tools — `tunnel_setup`, `tunnel_remove`, `tunnel_status`. Bundled bash scripts (`setup-autossh-service.sh` / `remove-autossh-service.sh`) install/remove `autossh-tunnel-<port>.service` via systemctl. Drop-in replacement for hand-writing `autossh -M 0 -NR port:localhost:22 user@host` commands, crafting `/etc/systemd/system/autossh-tunnel-*.service` unit files by hand, `sshuttle`, and manual `ssh -R` plus `tmux` reconnect loops. Use whenever the user asks to "set up a reverse SSH tunnel", "keep SSH alive through NAT", "access a lab machine from outside", "tunnel through a bastion", "autossh systemd service", "check tunnel status", "remove a tunnel", "expose this machine via a jump host", or mentions bastion server, NAT traversal, autossh, reverse SSH, HPC login node.
+name: scitex-ssh
+description: |
+  [WHAT] Persistent, auto-reconnecting SSH reverse tunnels for NAT traversal — installs an `autossh` systemd unit on the local host so a bastion/relay server can SSH back in even through firewalls and dynamic IPs.
+  [WHEN] Use whenever the user asks to "set up a reverse SSH tunnel", "keep SSH alive through NAT", "access a lab machine from outside", "tunnel through a bastion", "autossh systemd service", "check tunnel status", "remove a tunnel", "expose this machine via a jump host", or mentions bastion server, NAT traversal, autossh, reverse SSH, HPC login node.
+  [HOW] `pip install scitex-ssh` then `import scitex_ssh`; see leaf skills for details.
+tags: [scitex-ssh]
 allowed-tools: mcp__scitex__tunnel_*
 primary_interface: cli
 interfaces:
@@ -7,10 +12,7 @@ interfaces:
   cli: 3
   mcp: 2
   skills: 2
-  hook: 0
   http: 0
-name: scitex-ssh
-tags: [scitex-ssh, scitex-package]
 ---
 
 # SSH Tunnels with scitex-ssh
@@ -40,12 +42,16 @@ rule and empirical verification table.
 ## Sub-skills
 
 ### Core
-- [01_quick-start.md](01_quick-start.md) — Quick start
-- [02_python-api.md](02_python-api.md) — Python API
+- [01_installation.md](01_installation.md) — pip install + system deps + smoke verify
+- [02_quick-start.md](02_quick-start.md) — set up reverse tunnel (CLI + Python)
+- [03_python-api.md](03_python-api.md) — primitives + tunnel mgmt reference
+- [04_cli-reference.md](04_cli-reference.md) — full `scitex-ssh` subcommand surface
 
 ### Workflows
-- [10_cli-commands.md](10_cli-commands.md) — CLI commands
+- [10_cli-commands.md](10_cli-commands.md) — CLI commands (legacy)
 - [11_mcp-tools-for-ai-agents.md](11_mcp-tools-for-ai-agents.md) — MCP tools for AI agents
+- [12_quick-start.md](12_quick-start.md) — original quick-start (legacy)
+- [13_python-api.md](13_python-api.md) — original Python API page (legacy)
 
 ### Standards
-- [20_environment-variables.md](20_environment-variables.md) — Environment variables
+- [20_env-vars.md](20_env-vars.md) — Environment variables

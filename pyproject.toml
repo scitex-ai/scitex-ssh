@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scitex-ssh"
-version = "1.0.0"
+version = "1.0.1"
 description = "SSH primitives for SciTeX (exec/copy/attach/tunnel; per-host allowlist)"
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -41,9 +41,11 @@ mcp = [
     "fastmcp>=2.0.0",
 ]
 dev = [
-    "pytest>=7.0.0",
+    "fastmcp>=2.0.0",
     "pytest-cov>=4.0.0",
+    "pytest>=7.0.0",
     "scitex_dev",
+    "scitex-dev>=0.11.7",
 ]
 docs = [
     "sphinx>=7.0",
@@ -80,6 +82,11 @@ packages = ["src/scitex_ssh"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.coverage.run]
+parallel = true
+source = ["scitex_ssh"]
+concurrency = ["multiprocessing", "thread"]
 
 [tool.scitex-linter]
 library_dirs = ["src", "tests", "examples"]
