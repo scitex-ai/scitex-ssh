@@ -8,26 +8,15 @@ Also wires subprocess coverage: see
 05_development_06_subprocess-coverage.md. `os.environ.setdefault`
 would be a no-op because pytest-cov has already set
 COVERAGE_FILE by the time conftest is loaded.
-
-Shared test fakes (no-mocks discipline — 02_package_12_no-mocks.md):
-- ``FakeRunner`` — hand-rolled ``subprocess.run`` stand-in that
-  records every call and returns a configurable
-  ``subprocess.CompletedProcess``. Replaces every
-  ``unittest.mock.patch('subprocess.run')`` idiom that previously
-  haunted the test tree.
-- ``env_save_restore`` — yield-based fixture that snapshots and
-  restores ``os.environ`` mutations across a test. Replaces
-  ``monkeypatch.setenv``.
 """
 
 from __future__ import annotations
 
+import json
 import os
-import subprocess
+import stat
 import sysconfig
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 import pytest
 
@@ -61,67 +50,122 @@ def _ensure_subprocess_coverage_shim() -> None:
 _ensure_subprocess_coverage_shim()
 
 
-# ---------------------------------------------------------------------
-# Shared no-mocks fakes
-# ---------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Real-collaborator fixtures (no-mocks discipline — see 02_package_12_no-mocks.md)
+# ---------------------------------------------------------------------------
 
 
-@dataclass
-class FakeRunner:
-    """Hand-rolled stand-in for ``subprocess.run``.
+class _Shim:
+    """Handle to a directory of fake binaries that log their argv.
 
-    Records every call (positional ``cmd`` plus kwargs) so tests can
-    observe what production *actually* invoked, and returns a
-    configurable ``subprocess.CompletedProcess`` so tests can stage
-    success / failure paths. Real, honest, mock-free.
+    Each installed binary appends one JSON line per invocation to a
+    per-binary log file, so a test can assert on the *real* argv that
+    `subprocess.run` constructed — exercising the production codepath
+    end to end instead of patching `subprocess.run`.
     """
 
-    returncode: int = 0
-    stdout: str = ""
-    stderr: str = ""
-    side_effect: Exception | None = None
-    calls: list[tuple[list[str], dict[str, Any]]] = field(default_factory=list)
+    def __init__(self, bin_dir: Path):
+        self.bin_dir = bin_dir
 
-    def __call__(self, cmd, **kwargs) -> subprocess.CompletedProcess:
-        # Coerce cmd to a plain list so test assertions don't have to
-        # care whether production passed a tuple or a list.
-        self.calls.append((list(cmd), dict(kwargs)))
-        if self.side_effect is not None:
-            raise self.side_effect
-        return subprocess.CompletedProcess(
-            args=list(cmd),
-            returncode=self.returncode,
-            stdout=self.stdout,
-            stderr=self.stderr,
+    def install(
+        self, name: str, *, rc: int = 0, stdout: str = "", stderr: str = ""
+    ) -> None:
+        """Create an executable fake `name` that records argv and exits `rc`."""
+        log = self.bin_dir / f"{name}.log"
+        log.write_text("")
+        script = (
+            "#!/usr/bin/env python3\n"
+            "import json, sys\n"
+            f"log = {str(log)!r}\n"
+            "with open(log, 'a') as fh:\n"
+            "    fh.write(json.dumps(sys.argv[1:]) + '\\n')\n"
+            f"sys.stdout.write({stdout!r})\n"
+            f"sys.stderr.write({stderr!r})\n"
+            f"sys.exit({int(rc)})\n"
         )
+        path = self.bin_dir / name
+        path.write_text(script)
+        path.chmod(path.stat().st_mode | stat.S_IEXEC | stat.S_IXGRP | stat.S_IXOTH)
 
-    @property
-    def call_count(self) -> int:
-        return len(self.calls)
+    def argv(self, name: str) -> list[str]:
+        """Return argv (excluding binary name) of the last call to `name`."""
+        log = self.bin_dir / f"{name}.log"
+        lines = [ln for ln in log.read_text().splitlines() if ln.strip()]
+        if not lines:
+            raise AssertionError(f"shim {name!r} was never invoked")
+        return json.loads(lines[-1])
 
-    @property
-    def last_cmd(self) -> list[str]:
-        assert self.calls, "FakeRunner was never called"
-        return self.calls[-1][0]
+    def call_count(self, name: str) -> int:
+        log = self.bin_dir / f"{name}.log"
+        if not log.exists():
+            return 0
+        return len([ln for ln in log.read_text().splitlines() if ln.strip()])
 
 
 @pytest.fixture
-def fake_runner() -> FakeRunner:
-    """Per-test ``FakeRunner`` with a default success result."""
-    return FakeRunner()
+def subprocess_shim(tmp_path):
+    """Yield a `_Shim` whose `bin/` is prepended to `$PATH`.
+
+    Tests call `shim.install("ssh", stdout="hi")` then exercise the
+    production function; the real `subprocess.run(["ssh", ...])` resolves
+    to the fake, which logs argv. Assert via `shim.argv("ssh")`.
+    """
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    saved_path = os.environ.get("PATH", "")
+    os.environ["PATH"] = f"{bin_dir}{os.pathsep}{saved_path}"
+    try:
+        yield _Shim(bin_dir)
+    finally:
+        os.environ["PATH"] = saved_path
+
+
+@pytest.fixture
+def allow_tunnels(tmp_path, env_save_restore):
+    """Write an allowlist config that permits tunnels for every host.
+
+    Points the allowlist at it via $SCITEX_SSH_CONFIG (the documented
+    override) so allowlist-gated CLI commands (setup/remove) pass the
+    `_require_allowed(...)` check against a real config file.
+    """
+    cfg = tmp_path / "allow_config.yaml"
+    cfg.write_text("default: {tunnels: allow}\n")
+    env_save_restore("SCITEX_SSH_CONFIG", str(cfg))
+    return cfg
+
+
+@pytest.fixture
+def deny_tunnels(tmp_path, env_save_restore):
+    """Write an allowlist config that denies tunnels for every host.
+
+    Used to exercise the real PolicyError path through the CLI without a
+    forced mock side effect.
+    """
+    cfg = tmp_path / "deny_config.yaml"
+    cfg.write_text("default: {tunnels: deny}\n")
+    env_save_restore("SCITEX_SSH_CONFIG", str(cfg))
+    return cfg
 
 
 @pytest.fixture
 def env_save_restore():
-    """Yield-based snapshot/restore of ``os.environ`` mutations.
+    """Yield a setter that mutates os.environ and restores it on teardown.
 
-    Replaces ``monkeypatch.setenv`` — tests mutate ``os.environ``
-    inside the ``with``-block and the original mapping is restored
-    on teardown, regardless of test outcome.
+    Replaces `monkeypatch.setenv(...)`: call `set("HOME", "/tmp")` inside
+    a test; the original value (or absence) is restored at teardown.
     """
-    saved = dict(os.environ)
+    saved: dict[str, str | None] = {}
+
+    def _set(key: str, value: str) -> None:
+        if key not in saved:
+            saved[key] = os.environ.get(key)
+        os.environ[key] = value
+
     try:
-        yield os.environ
+        yield _set
     finally:
-        os.environ.clear()
-        os.environ.update(saved)
+        for key, old in saved.items():
+            if old is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = old
