@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Tests for scitex_ssh._cli._mcp — `mcp` subgroup CLI.
 
-All tests run real Click invocations against a live CliRunner — no
-mocks. Multi-assert variants are collapsed via shared fixtures that
-parse the JSON output once so each test stays single-assert (TQ007).
+No mocks. Each test runs the real Click command and asserts one thing;
+shared `--json` invocations are lifted into fixtures so every test stays
+single-assertion.
 """
 
 from __future__ import annotations
@@ -16,34 +16,24 @@ from click.testing import CliRunner
 from scitex_ssh._cli._mcp import mcp
 
 
-# ---------------------------------------------------------------------
-# Shared fixtures — parse JSON payloads once per test
-# ---------------------------------------------------------------------
-
-
 @pytest.fixture
-def show_installation_payload() -> dict:
-    runner = CliRunner()
-    result = runner.invoke(mcp, ["show-installation", "--json"])
+def install_payload():
+    """Parse `mcp show-installation --json` once."""
+    result = CliRunner().invoke(mcp, ["show-installation", "--json"])
     assert result.exit_code == 0, result.output
     return json.loads(result.output)
 
 
 @pytest.fixture
-def list_tools_payload() -> dict:
-    runner = CliRunner()
-    result = runner.invoke(mcp, ["list-tools", "--json"])
+def list_tools_payload():
+    """Parse `mcp list-tools --json` once."""
+    result = CliRunner().invoke(mcp, ["list-tools", "--json"])
     assert result.exit_code == 0, result.output
     return json.loads(result.output)
-
-
-# ---------------------------------------------------------------------
-# mcp --help — lists subcommands
-# ---------------------------------------------------------------------
 
 
 class TestMcpGroup:
-    def test_help_invocation_exit_code_zero(self) -> None:
+    def test_help_exits_zero(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -51,23 +41,20 @@ class TestMcpGroup:
         # Assert
         assert result.exit_code == 0
 
-    def test_help_lists_all_expected_subcommand_names(self) -> None:
+    def test_help_lists_all_subcommands(self):
         # Arrange
         runner = CliRunner()
-        expected = ("start", "doctor", "show-installation", "list-tools")
         # Act
         result = runner.invoke(mcp, ["--help"])
         # Assert
-        assert all(sub in result.output for sub in expected)
-
-
-# ---------------------------------------------------------------------
-# mcp start --dry-run
-# ---------------------------------------------------------------------
+        assert all(
+            sub in result.output
+            for sub in ("start", "doctor", "show-installation", "list-tools")
+        )
 
 
 class TestMcpStart:
-    def test_dry_run_invocation_exit_code_zero(self) -> None:
+    def test_dry_run_exits_zero(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -75,7 +62,7 @@ class TestMcpStart:
         # Assert
         assert result.exit_code == 0
 
-    def test_dry_run_output_says_dry_run(self) -> None:
+    def test_dry_run_announces_dry_run(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -84,23 +71,16 @@ class TestMcpStart:
         assert "DRY RUN" in result.output
 
 
-# ---------------------------------------------------------------------
-# mcp doctor
-# ---------------------------------------------------------------------
-
-
 class TestMcpDoctor:
-    def test_doctor_invocation_exit_code_zero_or_one(self) -> None:
+    def test_doctor_exits_zero_or_one(self):
         # Arrange
         runner = CliRunner()
         # Act
         result = runner.invoke(mcp, ["doctor"])
         # Assert
-        # 1 if optional deps (e.g. fastmcp) are missing — both are valid
-        # outcomes for "doctor reports dependency status".
         assert result.exit_code in (0, 1)
 
-    def test_doctor_output_mentions_fastmcp_dependency(self) -> None:
+    def test_doctor_mentions_fastmcp(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -108,7 +88,7 @@ class TestMcpDoctor:
         # Assert
         assert "fastmcp" in result.output
 
-    def test_doctor_output_mentions_autossh_dependency(self) -> None:
+    def test_doctor_mentions_autossh(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -117,13 +97,8 @@ class TestMcpDoctor:
         assert "autossh" in result.output
 
 
-# ---------------------------------------------------------------------
-# mcp show-installation — text + JSON
-# ---------------------------------------------------------------------
-
-
-class TestMcpShowInstallationText:
-    def test_text_invocation_exit_code_zero(self) -> None:
+class TestMcpShowInstallation:
+    def test_text_output_exits_zero(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -131,7 +106,7 @@ class TestMcpShowInstallationText:
         # Assert
         assert result.exit_code == 0
 
-    def test_text_output_includes_pip_install_command(self) -> None:
+    def test_text_output_shows_pip_install_command(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -139,7 +114,7 @@ class TestMcpShowInstallationText:
         # Assert
         assert "pip install scitex-ssh[mcp]" in result.output
 
-    def test_text_output_includes_mcpservers_config_block(self) -> None:
+    def test_text_output_shows_mcp_servers_block(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -147,9 +122,7 @@ class TestMcpShowInstallationText:
         # Assert
         assert "mcpServers" in result.output
 
-
-class TestMcpShowInstallationJson:
-    def test_json_invocation_exit_code_zero(self) -> None:
+    def test_json_output_exits_zero(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -157,32 +130,25 @@ class TestMcpShowInstallationJson:
         # Assert
         assert result.exit_code == 0
 
-    def test_json_payload_install_command_matches_expected(
-        self, show_installation_payload: dict
-    ) -> None:
+    def test_json_payload_carries_install_command(self, install_payload):
         # Arrange
+        payload = install_payload
         # Act
-        install_cmd = show_installation_payload["install_command"]
+        install_command = payload["install_command"]
         # Assert
-        assert install_cmd == "pip install scitex-ssh[mcp]"
+        assert install_command == "pip install scitex-ssh[mcp]"
 
-    def test_json_payload_config_mcpservers_includes_scitex_ssh(
-        self, show_installation_payload: dict
-    ) -> None:
+    def test_json_payload_registers_the_server(self, install_payload):
         # Arrange
+        payload = install_payload
         # Act
-        servers = show_installation_payload["config"]["mcpServers"]
+        servers = payload["config"]["mcpServers"]
         # Assert
         assert "scitex-ssh" in servers
 
 
-# ---------------------------------------------------------------------
-# mcp list-tools — text + JSON
-# ---------------------------------------------------------------------
-
-
 class TestMcpListTools:
-    def test_default_invocation_exit_code_zero(self) -> None:
+    def test_default_lists_tools_exits_zero(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -190,16 +156,18 @@ class TestMcpListTools:
         # Assert
         assert result.exit_code == 0
 
-    def test_default_output_lists_all_expected_tool_names(self) -> None:
+    def test_default_lists_all_tunnel_tool_names(self):
         # Arrange
         runner = CliRunner()
-        expected = ("tunnel_setup", "tunnel_status", "tunnel_remove")
         # Act
         result = runner.invoke(mcp, ["list-tools"])
         # Assert
-        assert all(tool in result.output for tool in expected)
+        assert all(
+            tool in result.output
+            for tool in ("tunnel_setup", "tunnel_status", "tunnel_remove")
+        )
 
-    def test_verbose_invocation_exit_code_zero(self) -> None:
+    def test_verbose_exits_zero(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -207,7 +175,7 @@ class TestMcpListTools:
         # Assert
         assert result.exit_code == 0
 
-    def test_verbose_output_includes_setup_description_lead(self) -> None:
+    def test_verbose_includes_tool_descriptions(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -215,7 +183,7 @@ class TestMcpListTools:
         # Assert
         assert "Set up" in result.output
 
-    def test_very_verbose_invocation_exit_code_zero(self) -> None:
+    def test_very_verbose_exits_zero(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -223,7 +191,7 @@ class TestMcpListTools:
         # Assert
         assert result.exit_code == 0
 
-    def test_very_verbose_output_includes_params_label(self) -> None:
+    def test_very_verbose_includes_params(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -231,7 +199,7 @@ class TestMcpListTools:
         # Assert
         assert "params:" in result.output
 
-    def test_json_invocation_exit_code_zero(self) -> None:
+    def test_json_output_exits_zero(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -239,33 +207,25 @@ class TestMcpListTools:
         # Assert
         assert result.exit_code == 0
 
-    def test_json_payload_total_field_counts_three_tools(
-        self, list_tools_payload: dict
-    ) -> None:
+    def test_json_payload_reports_three_tools(self, list_tools_payload):
         # Arrange
+        payload = list_tools_payload
         # Act
-        total = list_tools_payload["total"]
+        total = payload["total"]
         # Assert
         assert total == 3
 
-    def test_json_payload_tools_names_match_expected_set(
-        self, list_tools_payload: dict
-    ) -> None:
+    def test_json_payload_lists_the_three_tunnel_tools(self, list_tools_payload):
         # Arrange
-        expected = {"tunnel_setup", "tunnel_status", "tunnel_remove"}
+        payload = list_tools_payload
         # Act
-        names = {t["name"] for t in list_tools_payload["tools"]}
+        names = {t["name"] for t in payload["tools"]}
         # Assert
-        assert names == expected
-
-
-# ---------------------------------------------------------------------
-# Deprecated `installation` alias — error redirect to `show-installation`
-# ---------------------------------------------------------------------
+        assert {"tunnel_setup", "tunnel_status", "tunnel_remove"} == names
 
 
 class TestDeprecatedInstallationAlias:
-    def test_installation_alias_exit_code_two(self) -> None:
+    def test_installation_alias_exits_two(self):
         # Arrange
         runner = CliRunner()
         # Act
@@ -273,7 +233,7 @@ class TestDeprecatedInstallationAlias:
         # Assert
         assert result.exit_code == 2
 
-    def test_installation_alias_output_points_to_show_installation(self) -> None:
+    def test_installation_alias_redirects_to_show_installation(self):
         # Arrange
         runner = CliRunner()
         # Act

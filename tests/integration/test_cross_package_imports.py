@@ -15,22 +15,21 @@ in its source tree. Two outcomes:
   test is SKIPPED via `pytest.importorskip`. The umbrella's CI
   (which installs every peer) catches cross-package renames.
 """
+
 import pytest
 
 # ===== AUTO-GENERATED: cross-package imports =====
 CROSS_PACKAGE_IMPORTS = [
-    'scitex_dev._cli._completion',
+    "scitex_dev._cli._completion",
 ]
 # ===== END AUTO-GENERATED =====
 
 
 @pytest.mark.parametrize("module_name", CROSS_PACKAGE_IMPORTS)
-def test_cross_package_import_returns_real_module_object(module_name):
-    """Importing scitex-ssh's declared cross-package dependency must
-    return a real module object (not None) — proves the rename-detector
-    actually exercised the import rather than silently skipping it."""
+def test_cross_package_import(module_name):
+    """Importing scitex-ssh's declared cross-package dependency must succeed."""
     # Arrange
     # Act
-    mod = pytest.importorskip(module_name)
-    # Assert
-    assert mod.__name__ == module_name
+    module = pytest.importorskip(module_name)
+    # Assert — the imported object is really that module, not a stub
+    assert module.__name__ == module_name
