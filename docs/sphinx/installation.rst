@@ -12,7 +12,7 @@ Or as part of SciTeX:
 
 .. code-block:: bash
 
-    pip install scitex[tunnel]
+    pip install scitex[ssh]
 
 Prerequisites
 -------------

@@ -44,14 +44,15 @@ scitex-ssh attach user@host
 
 ## Tunnel management
 
-| Command          | Purpose                                              |
-|------------------|------------------------------------------------------|
-| `tunnel setup`   | Install autossh systemd unit (reverse tunnel)        |
-| `tunnel status`  | Show one or all installed tunnels                    |
-| `tunnel remove`  | Stop + uninstall a tunnel by port                    |
+| Command                 | Purpose                                              |
+|-------------------------|------------------------------------------------------|
+| `tunnel setup`          | Install autossh systemd unit (reverse tunnel)        |
+| `tunnel check-status`   | Show one or all installed tunnels                    |
+| `tunnel remove`         | Stop + uninstall a tunnel by port                    |
 
-Backward-compat shortcuts at the top level (`scitex-ssh setup / status /
-remove`) are still accepted.
+Backward-compat shortcuts at the top level (`scitex-ssh setup-tunnel /
+scitex-ssh show-status / scitex-ssh remove-tunnel`) are still accepted
+but deprecated.
 
 ```bash
 scitex-ssh tunnel setup --port 22 --bastion jump.example.com \
@@ -77,7 +78,7 @@ shape.
 ## Examples
 
 ```bash
-scitex-ssh --json tunnel status               # machine-readable
+scitex-ssh --json tunnel check-status         # machine-readable
 scitex-ssh --help-recursive | head -60        # full surface dump
 ```
 
