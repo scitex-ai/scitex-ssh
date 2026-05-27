@@ -54,7 +54,7 @@
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#setup-a-tunnel">Setup a Tunnel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#setup-a-tunnel-via-the-tunnel-subcommand-group">Setup a Tunnel (via the <code class="docutils literal notranslate"><span class="pre">tunnel</span></code> subcommand group)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#check-status">Check Status</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#remove-a-tunnel">Remove a Tunnel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#python-api-application-programming-interface">Python API (Application Programming Interface)</a></li>
@@ -129,29 +129,29 @@
              
   <section id="quickstart">
 <h1>Quickstart<a class="headerlink" href="#quickstart" title="Link to this heading"></a></h1>
-<section id="setup-a-tunnel">
-<h2>Setup a Tunnel<a class="headerlink" href="#setup-a-tunnel" title="Link to this heading"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>scitex-ssh<span class="w"> </span>setup<span class="w"> </span>-p<span class="w"> </span><span class="m">2222</span><span class="w"> </span>-b<span class="w"> </span>user@bastion.example.com<span class="w"> </span>-s<span class="w"> </span>~/.ssh/id_rsa
+<section id="setup-a-tunnel-via-the-tunnel-subcommand-group">
+<h2>Setup a Tunnel (via the <code class="docutils literal notranslate"><span class="pre">tunnel</span></code> subcommand group)<a class="headerlink" href="#setup-a-tunnel-via-the-tunnel-subcommand-group" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>scitex-ssh<span class="w"> </span>tunnel<span class="w"> </span>setup<span class="w"> </span>-p<span class="w"> </span><span class="m">2222</span><span class="w"> </span>-b<span class="w"> </span>user@bastion.example.com<span class="w"> </span>-s<span class="w"> </span>~/.ssh/id_rsa
 </pre></div>
 </div>
 <p>This creates a systemd service that maintains a persistent reverse SSH (Secure Shell) tunnel.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><code class="docutils literal notranslate"><span class="pre">setup</span></code> and <code class="docutils literal notranslate"><span class="pre">remove</span></code> require <strong>sudo</strong> privileges because they write
+<p><code class="docutils literal notranslate"><span class="pre">tunnel</span> <span class="pre">setup</span></code> and <code class="docutils literal notranslate"><span class="pre">tunnel</span> <span class="pre">remove</span></code> require <strong>sudo</strong> privileges because they write
 systemd service files to <code class="docutils literal notranslate"><span class="pre">/etc/systemd/system/</span></code> and run <code class="docutils literal notranslate"><span class="pre">systemctl</span></code>.
 You will be prompted for your password.</p>
 </div>
 </section>
 <section id="check-status">
 <h2>Check Status<a class="headerlink" href="#check-status" title="Link to this heading"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>scitex-ssh<span class="w"> </span>status
-scitex-ssh<span class="w"> </span>status<span class="w"> </span>-p<span class="w"> </span><span class="m">2222</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>scitex-ssh<span class="w"> </span>tunnel<span class="w"> </span>check-status
+scitex-ssh<span class="w"> </span>tunnel<span class="w"> </span>check-status<span class="w"> </span>-p<span class="w"> </span><span class="m">2222</span>
 </pre></div>
 </div>
 </section>
 <section id="remove-a-tunnel">
 <h2>Remove a Tunnel<a class="headerlink" href="#remove-a-tunnel" title="Link to this heading"></a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>scitex-ssh<span class="w"> </span>remove<span class="w"> </span>-p<span class="w"> </span><span class="m">2222</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>scitex-ssh<span class="w"> </span>tunnel<span class="w"> </span>remove<span class="w"> </span>-p<span class="w"> </span><span class="m">2222</span>
 </pre></div>
 </div>
 </section>

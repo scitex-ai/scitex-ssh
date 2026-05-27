@@ -54,7 +54,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="quickstart.html#setup-a-tunnel">Setup a Tunnel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#setup-a-tunnel-via-the-tunnel-subcommand-group">Setup a Tunnel (via the <code class="docutils literal notranslate"><span class="pre">tunnel</span></code> subcommand group)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#check-status">Check Status</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#remove-a-tunnel">Remove a Tunnel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="quickstart.html#python-api-application-programming-interface">Python API (Application Programming Interface)</a></li>
@@ -208,7 +208,7 @@ and runs as a daemon.</p>
 </ul>
 <section id="the-service-file">
 <h3>The Service File<a class="headerlink" href="#the-service-file" title="Link to this heading"></a></h3>
-<p>When you run <code class="docutils literal notranslate"><span class="pre">scitex-ssh</span> <span class="pre">setup</span> <span class="pre">-p</span> <span class="pre">2222</span> <span class="pre">-b</span> <span class="pre">user&#64;bastion</span> <span class="pre">-s</span> <span class="pre">~/.ssh/id_rsa</span></code>,
+<p>When you run <code class="docutils literal notranslate"><span class="pre">scitex-ssh</span> <span class="pre">tunnel</span> <span class="pre">setup</span> <span class="pre">-p</span> <span class="pre">2222</span> <span class="pre">-b</span> <span class="pre">user&#64;bastion</span> <span class="pre">-s</span> <span class="pre">~/.ssh/id_rsa</span></code>,
 the following systemd unit file is created:</p>
 <p><strong>File</strong>: <code class="docutils literal notranslate"><span class="pre">/etc/systemd/system/autossh-tunnel-2222.service</span></code></p>
 <div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[Unit]</span>
@@ -271,7 +271,7 @@ systemctl<span class="w"> </span>restart<span class="w"> </span>autossh-tunnel-2
 <p>Each operation is available through all three interfaces:</p>
 <ul class="simple">
 <li><p><strong>Python</strong>: <code class="docutils literal notranslate"><span class="pre">scitex_ssh.setup()</span></code>, <code class="docutils literal notranslate"><span class="pre">scitex_ssh.status()</span></code>, <code class="docutils literal notranslate"><span class="pre">scitex_ssh.remove()</span></code></p></li>
-<li><p><strong>CLI</strong>: <code class="docutils literal notranslate"><span class="pre">scitex-ssh</span> <span class="pre">setup</span></code>, <code class="docutils literal notranslate"><span class="pre">scitex-ssh</span> <span class="pre">status</span></code>, <code class="docutils literal notranslate"><span class="pre">scitex-ssh</span> <span class="pre">remove</span></code></p></li>
+<li><p><strong>CLI</strong>: <code class="docutils literal notranslate"><span class="pre">scitex-ssh</span> <span class="pre">tunnel</span> <span class="pre">setup</span></code>, <code class="docutils literal notranslate"><span class="pre">scitex-ssh</span> <span class="pre">tunnel</span> <span class="pre">check-status</span></code>, <code class="docutils literal notranslate"><span class="pre">scitex-ssh</span> <span class="pre">tunnel</span> <span class="pre">remove</span></code></p></li>
 <li><p><strong>MCP</strong>: <code class="docutils literal notranslate"><span class="pre">tunnel_setup</span></code>, <code class="docutils literal notranslate"><span class="pre">tunnel_status</span></code>, <code class="docutils literal notranslate"><span class="pre">tunnel_remove</span></code> tools</p></li>
 </ul>
 </section>
