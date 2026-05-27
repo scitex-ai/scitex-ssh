@@ -3,6 +3,8 @@ description: |
   [TOPIC] scitex-ssh CLI Reference
   [DETAILS] Top-level subcommands of `scitex-ssh` — exec, copy, attach, tunnel (setup/status/remove), mcp, list-python-apis.
 tags: [scitex-ssh-cli-reference]
+version: 1.0.0
+exported_via: installed
 ---
 
 # CLI Reference

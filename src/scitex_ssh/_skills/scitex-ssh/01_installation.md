@@ -3,6 +3,8 @@ description: |
   [TOPIC] scitex-ssh Installation
   [DETAILS] pip install scitex-ssh; needs system openssh-client + autossh; smoke verify with status.
 tags: [scitex-ssh-installation]
+version: 1.0.0
+exported_via: installed
 ---
 
 # Installation

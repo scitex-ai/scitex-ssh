@@ -3,6 +3,8 @@ description: |
   [TOPIC] scitex-ssh Python API
   [DETAILS] Top-level public callables — primitives (exec_remote/copy_to/copy_from/attach) + tunnel mgmt (setup/status/remove) + PolicyError + SSHResult.
 tags: [scitex-ssh-python-api]
+version: 1.0.0
+exported_via: installed
 ---
 
 # Python API

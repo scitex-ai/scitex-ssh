@@ -3,6 +3,8 @@ description: |
   [TOPIC] scitex-ssh Quick Start
   [DETAILS] Smallest example — set up a reverse SSH tunnel via the CLI, then check status.
 tags: [scitex-ssh-quick-start]
+version: 1.0.0
+exported_via: installed
 ---
 
 # Quick Start

@@ -3,6 +3,8 @@ description: |
   [TOPIC] Python Api
   [DETAILS] ## Python API.
 tags: [scitex-ssh-python-api]
+version: 1.0.0
+exported_via: installed
 ---
 
 ## Python API

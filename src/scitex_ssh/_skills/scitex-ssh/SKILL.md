@@ -13,6 +13,8 @@ interfaces:
   mcp: 2
   skills: 2
   http: 0
+version: 1.0.0
+exported_via: installed
 ---
 
 # SSH Tunnels with scitex-ssh

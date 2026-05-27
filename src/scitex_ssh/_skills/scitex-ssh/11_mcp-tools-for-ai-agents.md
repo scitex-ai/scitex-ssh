@@ -3,6 +3,8 @@ description: |
   [TOPIC] Mcp Tools for Ai Agents
   [DETAILS] ## MCP Tools (for AI agents).
 tags: [scitex-ssh-mcp-tools-for-ai-agents]
+version: 1.0.0
+exported_via: installed
 ---
 
 ## MCP Tools (for AI agents)

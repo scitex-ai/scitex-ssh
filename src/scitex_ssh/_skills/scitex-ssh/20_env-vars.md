@@ -3,6 +3,8 @@ description: |
   [TOPIC] Environment Variables
   [DETAILS] ## Environment Variables.
 tags: [scitex-ssh-env-vars]
+version: 1.0.0
+exported_via: installed
 ---
 
 ## Environment Variables

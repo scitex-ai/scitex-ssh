@@ -3,6 +3,8 @@ description: |
   [TOPIC] Setup a tunnel (port 22 exposed via bastion)
   [DETAILS] Setup a tunnel (port 22 exposed via bastion) — see file body for details..
 tags: [scitex-ssh-quick-start]
+version: 1.0.0
+exported_via: installed
 ---
 
 ## Quick Start

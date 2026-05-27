@@ -3,6 +3,8 @@ description: |
   [TOPIC] Core
   [DETAILS] Core — see file body for details..
 tags: [scitex-ssh-cli-commands]
+version: 1.0.0
+exported_via: installed
 ---
 
 ## CLI Commands
