@@ -1,18 +1,18 @@
 Quickstart
 ==========
 
-Setup a Tunnel
---------------
+Setup a Tunnel (via the ``tunnel`` subcommand group)
+-----------------------------------------------------
 
 .. code-block:: bash
 
-    scitex-ssh setup -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
+    scitex-ssh tunnel setup -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
 
 This creates a systemd service that maintains a persistent reverse SSH (Secure Shell) tunnel.
 
 .. note::
 
-   ``setup`` and ``remove`` require **sudo** privileges because they write
+   ``tunnel setup`` and ``tunnel remove`` require **sudo** privileges because they write
    systemd service files to ``/etc/systemd/system/`` and run ``systemctl``.
    You will be prompted for your password.
 
@@ -21,15 +21,15 @@ Check Status
 
 .. code-block:: bash
 
-    scitex-ssh status
-    scitex-ssh status -p 2222
+    scitex-ssh tunnel check-status
+    scitex-ssh tunnel check-status -p 2222
 
 Remove a Tunnel
 ---------------
 
 .. code-block:: bash
 
-    scitex-ssh remove -p 2222
+    scitex-ssh tunnel remove -p 2222
 
 Python API (Application Programming Interface)
 -----------------------------------------------

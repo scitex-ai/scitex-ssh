@@ -10,7 +10,7 @@ tags: [scitex-ssh-quick-start]
 ## CLI: install a reverse tunnel
 
 ```bash
-scitex-ssh setup \
+scitex-ssh tunnel setup \
     --port 22 \
     --bastion jump.example.com \
     --secret-key ~/.ssh/id_rsa
@@ -21,9 +21,9 @@ maintains a reverse tunnel from `jump.example.com:<port>` back to this
 machine, surviving network drops and dynamic IPs.
 
 ```bash
-scitex-ssh status              # list all tunnels
-scitex-ssh status --port 22    # status of one tunnel
-scitex-ssh remove --port 22    # tear down + remove unit
+scitex-ssh tunnel check-status          # list all tunnels
+scitex-ssh tunnel check-status --port 22    # status of one tunnel
+scitex-ssh tunnel remove --port 22      # tear down + remove unit
 ```
 
 ## Python equivalent
@@ -51,5 +51,5 @@ attach("user@host")              # interactive shell
 ```
 
 All primitives are gated by the host allowlist
-(`~/.scitex/ssh/allowed_hosts.yaml`); unlisted hosts raise
+(`~/.scitex/ssh/config.yaml`); unlisted hosts raise
 `PolicyError`.

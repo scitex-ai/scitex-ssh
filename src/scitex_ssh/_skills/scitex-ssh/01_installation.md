@@ -50,7 +50,7 @@ work — install the umbrella for that form. See
 ```bash
 python -c "import scitex_ssh; print(scitex_ssh.__version__, scitex_ssh.AVAILABLE)"
 scitex-ssh --help
-scitex-ssh status
+scitex-ssh tunnel check-status
 ```
 
 Expected: a version string, `AVAILABLE = True`, then a status table
@@ -60,4 +60,4 @@ Expected: a version string, `AVAILABLE = True`, then a status table
 
 - `setup` requires `sudo` to install the systemd unit — it will prompt.
 - A per-host SSH allowlist gate (`PolicyError`) blocks tunnels to
-  hosts not listed in `~/.scitex/ssh/allowed_hosts.yaml`.
+  hosts not listed in `~/.scitex/ssh/config.yaml`.

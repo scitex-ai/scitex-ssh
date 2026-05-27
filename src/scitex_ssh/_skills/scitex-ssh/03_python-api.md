@@ -48,12 +48,12 @@ result = setup(port=22, bastion_server="jump.example.com",
 
 ## Allowlist
 
-All primitives consult `~/.scitex/ssh/allowed_hosts.yaml`. Unlisted
+All primitives consult `~/.scitex/ssh/config.yaml`. Unlisted
 hosts raise `PolicyError` before any SSH call is dispatched. Append
 hosts manually:
 
 ```yaml
-# ~/.scitex/ssh/allowed_hosts.yaml
+# ~/.scitex/ssh/config.yaml
 hosts:
   - host.example.com
   - jump.example.com
