@@ -51,7 +51,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../quickstart.html">Quickstart</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html#setup-a-tunnel">Setup a Tunnel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html#setup-a-tunnel-via-the-tunnel-subcommand-group">Setup a Tunnel (via the <code class="docutils literal notranslate"><span class="pre">tunnel</span></code> subcommand group)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../quickstart.html#check-status">Check Status</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../quickstart.html#remove-a-tunnel">Remove a Tunnel</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../quickstart.html#python-api-application-programming-interface">Python API (Application Programming Interface)</a></li>
@@ -128,7 +128,8 @@
   <h1>Source code for scitex_ssh._allowlist</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Per-host policy for gating sensitive features (currently: tunnels).</span>
 
-<span class="sd">Config file: ~/.scitex/ssh/config.yaml</span>
+<span class="sd">Config file resolution (first that exists wins):</span>
+<span class="sd">  $SCITEX_SSH_CONFIG  -&gt;  ~/.scitex/ssh/config.yaml</span>
 
 <span class="sd">Schema:</span>
 <span class="sd">  default:</span>
@@ -138,13 +139,19 @@
 <span class="sd">    nas:    {tunnels: allow}</span>
 <span class="sd">    spartan: {tunnels: deny}</span>
 
-<span class="sd">If the file does not exist: default policy is `deny` (fail-closed).</span>
+<span class="sd">If no config file exists: default policy is `deny` (fail-closed).</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="c1">#: Default config location. Overridable per-call via the $SCITEX_SSH_CONFIG</span>
+<span class="c1">#: environment variable (see `config_path()`), matching the precedence chain</span>
+<span class="c1">#: advertised in the CLI `--help`.</span>
+<span class="n">CONFIG_PATH</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;.scitex&quot;</span> <span class="o">/</span> <span class="s2">&quot;ssh&quot;</span> <span class="o">/</span> <span class="s2">&quot;config.yaml&quot;</span>
 
 
 <div class="viewcode-block" id="PolicyError">
@@ -154,7 +161,23 @@
 
 
 
-<span class="n">CONFIG_PATH</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;.scitex&quot;</span> <span class="o">/</span> <span class="s2">&quot;ssh&quot;</span> <span class="o">/</span> <span class="s2">&quot;config.yaml&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">config_path</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve the active config path.</span>
+
+<span class="sd">    `$SCITEX_SSH_CONFIG` takes precedence over the default</span>
+<span class="sd">    `~/.scitex/ssh/config.yaml`. Resolved at call time so the environment</span>
+<span class="sd">    can be set after import (and so tests can point at a tmp config).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;SCITEX_SSH_CONFIG&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">env</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">CONFIG_PATH</span>
+
+
+<span class="c1">#: Module-level alias so functions whose keyword parameter is also named</span>
+<span class="c1">#: ``config_path`` (the explicit-override seam) can still reach the</span>
+<span class="c1">#: env-aware resolver without the parameter shadowing it.</span>
+<span class="n">_resolve_config_path</span> <span class="o">=</span> <span class="n">config_path</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">is_allowed</span><span class="p">(</span>
@@ -168,11 +191,13 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    config_path : Path, optional</span>
-<span class="sd">        Override the config file location. Defaults to ``CONFIG_PATH``</span>
-<span class="sd">        (``~/.scitex/ssh/config.yaml``). Used by tests to point at a</span>
-<span class="sd">        real config in ``tmp_path`` without patching module globals.</span>
+<span class="sd">        Override the config file location. Defaults to the path resolved</span>
+<span class="sd">        by ``config_path()`` (``$SCITEX_SSH_CONFIG`` then</span>
+<span class="sd">        ``~/.scitex/ssh/config.yaml``). Used by tests to point at a real</span>
+<span class="sd">        config in ``tmp_path`` without patching module globals.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">cfg</span> <span class="o">=</span> <span class="n">_load</span><span class="p">(</span><span class="n">config_path</span> <span class="k">if</span> <span class="n">config_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">CONFIG_PATH</span><span class="p">)</span>
+    <span class="n">resolved</span> <span class="o">=</span> <span class="n">config_path</span> <span class="k">if</span> <span class="n">config_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">_resolve_config_path</span><span class="p">()</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">_load</span><span class="p">(</span><span class="n">resolved</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">cfg</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span>  <span class="c1"># fail-closed when no config</span>
     <span class="n">hosts</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;hosts&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
@@ -190,7 +215,9 @@
     <span class="n">config_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">is_allowed</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">config_path</span><span class="o">=</span><span class="n">config_path</span><span class="p">):</span>
-        <span class="n">path_for_msg</span> <span class="o">=</span> <span class="n">config_path</span> <span class="k">if</span> <span class="n">config_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">CONFIG_PATH</span>
+        <span class="n">path_for_msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">config_path</span> <span class="k">if</span> <span class="n">config_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">_resolve_config_path</span><span class="p">()</span>
+        <span class="p">)</span>
         <span class="k">raise</span> <span class="n">PolicyError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;feature </span><span class="si">{</span><span class="n">feature</span><span class="si">!r}</span><span class="s2"> is not allowed for host </span><span class="si">{</span><span class="n">host</span><span class="si">!r}</span><span class="s2">. &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;Edit </span><span class="si">{</span><span class="n">path_for_msg</span><span class="si">}</span><span class="s2"> to add &#39;hosts.</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">feature</span><span class="si">}</span><span class="s2">: allow&#39; &quot;</span>

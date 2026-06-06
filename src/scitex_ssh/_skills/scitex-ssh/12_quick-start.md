@@ -9,16 +9,16 @@ tags: [scitex-ssh-quick-start]
 
 ```bash
 # Setup a tunnel (port 22 exposed via bastion)
-scitex-ssh setup --port 22 --bastion jump.example.com --secret-key ~/.ssh/id_rsa
+scitex-ssh tunnel setup --port 22 --bastion jump.example.com --secret-key ~/.ssh/id_rsa
 
 # Check status
-scitex-ssh status
+scitex-ssh tunnel check-status
 
 # Check specific port
-scitex-ssh status --port 22
+scitex-ssh tunnel check-status --port 22
 
 # Remove tunnel
-scitex-ssh remove --port 22
+scitex-ssh tunnel remove --port 22
 ```
 
 ```python

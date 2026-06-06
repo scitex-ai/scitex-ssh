@@ -238,15 +238,15 @@ result = scitex_ssh.remove(2222)
 
 ```bash
 scitex-ssh --help-recursive                # Show all commands
-scitex-ssh setup -p 2222 -b user@host -s ~/.ssh/id_rsa
-scitex-ssh status                          # All tunnels
-scitex-ssh status -p 2222                  # Specific port
-scitex-ssh remove -p 2222                  # Remove tunnel
+scitex-ssh tunnel setup -p 2222 -b user@host -s ~/.ssh/id_rsa
+scitex-ssh tunnel check-status             # All tunnels
+scitex-ssh tunnel check-status -p 2222     # Specific port
+scitex-ssh tunnel remove -p 2222           # Remove tunnel
 scitex-ssh list-python-apis                # List Python APIs
 scitex-ssh mcp list-tools                  # List MCP (Model Context Protocol) tools
 ```
 
-> **Note**: `setup` and `remove` write systemd unit files under `/etc/systemd/system/` and call `systemctl`, so they prompt for **sudo** the first time. `status`, `list-python-apis`, and `mcp ...` do not.
+> **Note**: `tunnel setup` and `tunnel remove` write systemd unit files under `/etc/systemd/system/` and call `systemctl`, so they prompt for **sudo** the first time. `tunnel check-status`, `list-python-apis`, and `mcp ...` do not.
 
 > **[Full CLI reference](https://scitex-ssh.readthedocs.io/en/latest/quickstart.html)** · run `scitex-ssh --help-recursive` for the live tree.
 
@@ -286,11 +286,15 @@ Code, MCP-aware tools, or `newb`):
 | File | Purpose |
 |------|---------|
 | `SKILL.md` | Index — what this package does + tag map |
-| `01_quick-start.md` | 30-second tour |
-| `02_python-api.md` | Python API surface |
-| `10_cli-commands.md` | CLI reference |
+| `01_installation.md` | Installation and prerequisites |
+| `02_quick-start.md` | 30-second tour (CLI + Python) |
+| `03_python-api.md` | Python API surface |
+| `04_cli-reference.md` | Full CLI reference |
+| `10_cli-commands.md` | CLI commands (legacy) |
 | `11_mcp-tools-for-ai-agents.md` | MCP tool catalog |
-| `20_environment-variables.md` | `SCITEX_SSH_*` env vars |
+| `12_quick-start.md` | Quick-start (legacy) |
+| `13_python-api.md` | Python API (legacy) |
+| `20_env-vars.md` | `SCITEX_SSH_*` env vars |
 
 ```bash
 scitex-ssh skills list
@@ -340,7 +344,8 @@ $ ssh -p 2222 user@bastion.example.com
 
 `scitex-ssh` is part of [**SciTeX**](https://scitex.ai). Install via
 the umbrella with `pip install scitex[ssh]` to use as
-`scitex.ssh` (Python) or `scitex ssh ...` (CLI).
+`scitex.ssh` (Python) or `scitex ssh ...` (CLI), or via
+`pip install scitex-ssh[all]` for standalone use with MCP support.
 
 SciTeX follows the Four Freedoms for Research below, inspired by
 [the Free Software Definition](https://www.gnu.org/philosophy/free-sw.en.html):

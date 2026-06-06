@@ -89,7 +89,7 @@ Each tunnel is registered as a systemd service unit. This provides:
 The Service File
 ~~~~~~~~~~~~~~~~
 
-When you run ``scitex-ssh setup -p 2222 -b user@bastion -s ~/.ssh/id_rsa``,
+When you run ``scitex-ssh tunnel setup -p 2222 -b user@bastion -s ~/.ssh/id_rsa``,
 the following systemd unit file is created:
 
 **File**: ``/etc/systemd/system/autossh-tunnel-2222.service``
@@ -146,7 +146,7 @@ The Three Operations
 Each operation is available through all three interfaces:
 
 - **Python**: ``scitex_ssh.setup()``, ``scitex_ssh.status()``, ``scitex_ssh.remove()``
-- **CLI**: ``scitex-ssh setup``, ``scitex-ssh status``, ``scitex-ssh remove``
+- **CLI**: ``scitex-ssh tunnel setup``, ``scitex-ssh tunnel check-status``, ``scitex-ssh tunnel remove``
 - **MCP**: ``tunnel_setup``, ``tunnel_status``, ``tunnel_remove`` tools
 
 Environment Variables
