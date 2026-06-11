@@ -1,30 +1,38 @@
 # Timestamp: "2025-02-15 02:01:15 (ywatanabe)"
 # File: /home/ywatanabe/proj/example-scitex-project/config/PATH.yaml
+#
+# PS-PATH-001: per the rule, config/PATH.yaml exposes its top-level
+# keys directly under CONFIG.PATH.<KEY>. The filename already names
+# the namespace — wrapping the contents in an outer `PATH:` key would
+# put the real entries at CONFIG.PATH.PATH.<KEY> and every
+# `eval(CONFIG.PATH.<KEY>)` access site would crash with
+# AttributeError. So no outer wrapper; children sit at the top level.
+# See scitex-dev _skills/scientific/02_research-project/
+# 03_project-structure-config-and-data.md §`PATH.yaml`.
 
-PATH:
-  MNIST:
-    RAW:
-      "./data/mnist/raw/"
-    LOADER:
-      TRAIN:
-        "./data/mnist/train_loader.pkl"
-      TEST:
-        "./data/mnist/test_loader.pkl"
-    FLATTENED:
-      TRAIN:
-        "./data/mnist/train_flattened.npy"
-      TEST:
-        "./data/mnist/test_flattened.npy"
-    LABELS:      
-      TRAIN:
-        "./data/mnist/train_labels.npy"
-      TEST:
-        "./data/mnist/test_labels.npy"
-    FIGURES:
-      "./data/mnist/figures/"
-    MODELS:
-      "./data/mnist/models/"
-    MODEL_SVM:
-      f"{CONFIG.PATH.MNIST.MODELS}/mnist_svm.pkl"
+MNIST:
+  RAW:
+    "./data/mnist/raw/"
+  LOADER:
+    TRAIN:
+      "./data/mnist/train_loader.pkl"
+    TEST:
+      "./data/mnist/test_loader.pkl"
+  FLATTENED:
+    TRAIN:
+      "./data/mnist/train_flattened.npy"
+    TEST:
+      "./data/mnist/test_flattened.npy"
+  LABELS:
+    TRAIN:
+      "./data/mnist/train_labels.npy"
+    TEST:
+      "./data/mnist/test_labels.npy"
+  FIGURES:
+    "./data/mnist/figures/"
+  MODELS:
+    "./data/mnist/models/"
+  MODEL_SVM:
+    f"{CONFIG.PATH.MNIST.MODELS}/mnist_svm.pkl"
 
 # EOF
