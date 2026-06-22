@@ -63,6 +63,9 @@ GITIGNORED/
 !.scitex/dev/
 .scitex/dev/*
 !.scitex/dev/config.yaml
+# audit-cli §1 vocabulary overrides — MUST be tracked so CI's audit gate
+# (tests/develop/test_audit.py) reads the same intransitive-verb whitelist.
+!.scitex/dev/cli-audit-dict.yaml
 
 # Emacs
 *~

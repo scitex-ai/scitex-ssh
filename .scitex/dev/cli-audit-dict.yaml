@@ -1,0 +1,23 @@
+# Project-local CLI audit dictionary for scitex-ssh.
+#
+# Extends the bundled scitex-dev catalog with package-specific tokens.
+# See: scitex-dev/_skills/general/03_interface_02_cli/07_audit-cli.md
+#
+# Format expected by
+# scitex_dev/_cli/audit/_summary/_audit.py::_load_custom_dict():
+#   nouns:              [...]
+#   transitive_verbs:   [...]
+#   intransitive_verbs: [...]
+
+intransitive_verbs:
+  # audit-cli §1 escape hatch (the same mechanism `next` uses, and that
+  # scitex-todo uses for watch/close/comment): Moby's POS corpus
+  # classifies `attach` as BOTH a noun and a verb, so the leaf-noun
+  # rule — tightened by scitex-dev fe5a254 (operator directive 13316) to
+  # catch multi-class homonyms — flags it. In this CLI's grammar it is
+  # unambiguously the imperative the user types to act on a session:
+  #   scitex-ssh attach <session>   — attach to a multiplexed SSH session
+  # (mirrors the established `tmux attach` / `screen -r` pattern; a
+  # rename to `<verb>-attach` / `attach start` would be worse UX).
+  # Declaring it an intransitive verb records that intent and clears §1.
+  - attach
