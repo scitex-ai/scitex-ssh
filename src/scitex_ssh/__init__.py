@@ -10,7 +10,14 @@ import subprocess
 from ._allowlist import PolicyError
 from ._allowlist import is_allowed as _is_allowed
 from ._allowlist import require as _require_allowed
-from ._primitives import SSHResult, attach, copy_from, copy_to, exec_remote
+from ._primitives import (
+    SSHResult,
+    attach,
+    copy_from,
+    copy_to,
+    exec_remote,
+    sync_dir,
+)
 
 __all__ = [
     "__version__",
@@ -20,6 +27,7 @@ __all__ = [
     "copy_from",
     "copy_to",
     "exec_remote",
+    "sync_dir",
     "setup",
     "remove",
     "status",

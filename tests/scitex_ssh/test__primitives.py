@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from scitex_ssh import SSHResult, copy_from, copy_to, exec_remote
+from scitex_ssh import SSHResult, copy_from, copy_to, exec_remote, sync_dir
 
 
 def test_exec_remote_builds_plain_ssh_argv_from_host_and_command(subprocess_shim):
@@ -105,6 +105,99 @@ def test_copy_from_constructs_remote_source_argv(subprocess_shim):
     copy_from("h", "~/src", "/local/dest")
     # Assert
     assert subprocess_shim.argv("scp") == ["h:~/src", "/local/dest"]
+
+
+def test_sync_dir_push_puts_remote_dest_last(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("rsync", rc=0)
+    # Act
+    sync_dir("spartan", "/local/lib/", "~/lib/")
+    # Assert
+    assert subprocess_shim.argv("rsync") == [
+        "-a",
+        "--partial",
+        "/local/lib/",
+        "spartan:~/lib/",
+    ]
+
+
+def test_sync_dir_pull_puts_remote_src_first(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("rsync", rc=0)
+    # Act
+    sync_dir("spartan", "/local/lib/", "~/lib/", direction="pull")
+    # Assert
+    assert subprocess_shim.argv("rsync") == [
+        "-a",
+        "--partial",
+        "spartan:~/lib/",
+        "/local/lib/",
+    ]
+
+
+def test_sync_dir_renders_each_exclude_as_a_flag(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("rsync", rc=0)
+    # Act
+    sync_dir("h", "/l/", "~/r/", exclude=["index.db", "*.db-wal"])
+    # Assert
+    argv = subprocess_shim.argv("rsync")
+    assert "--exclude=index.db" in argv and "--exclude=*.db-wal" in argv
+
+
+def test_sync_dir_omits_delete_by_default(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("rsync", rc=0)
+    # Act
+    sync_dir("h", "/l/", "~/r/")
+    # Assert
+    assert "--delete" not in subprocess_shim.argv("rsync")
+
+
+def test_sync_dir_adds_delete_when_requested(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("rsync", rc=0)
+    # Act
+    sync_dir("h", "/l/", "~/r/", delete=True)
+    # Assert
+    assert "--delete" in subprocess_shim.argv("rsync")
+
+
+def test_sync_dir_wires_ssh_opts_into_e_flag(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("rsync", rc=0)
+    # Act
+    sync_dir("h", "/l/", "~/r/", ssh_opts=["-o", "BatchMode=yes"])
+    # Assert
+    argv = subprocess_shim.argv("rsync")
+    assert argv[argv.index("-e") + 1] == "ssh -o BatchMode=yes"
+
+
+def test_sync_dir_appends_extra_opts_verbatim(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("rsync", rc=0)
+    # Act
+    sync_dir("h", "/l/", "~/r/", extra_opts=["--checksum", "--mkpath"])
+    # Assert
+    argv = subprocess_shim.argv("rsync")
+    assert "--checksum" in argv and "--mkpath" in argv
+
+
+def test_sync_dir_returns_sshresult_instance(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("rsync", rc=0, stdout="sent")
+    # Act
+    result = sync_dir("h", "/l/", "~/r/")
+    # Assert
+    assert isinstance(result, SSHResult)
+
+
+def test_sync_dir_rejects_unknown_direction():
+    # Arrange
+    ctx = pytest.raises(ValueError)
+    # Act / Assert
+    with ctx:
+        sync_dir("h", "/l/", "~/r/", direction="sideways")
 
 
 # EOF

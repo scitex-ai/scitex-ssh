@@ -7,12 +7,12 @@ import click
 
 from ._introspect import list_python_apis
 from ._mcp import mcp
-from ._primitives import attach_cmd, copy_cmd, exec_cmd
+from ._primitives import attach_cmd, copy_cmd, exec_cmd, sync_cmd
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 COMMAND_CATEGORIES = [
-    ("SSH Primitives", ["exec", "copy", "attach"]),
+    ("SSH Primitives", ["exec", "copy", "sync", "attach"]),
     ("Tunnel Management", ["tunnel"]),
     ("Integration", ["mcp", "list-python-apis"]),
 ]
@@ -360,6 +360,7 @@ def show_status_deprecated(port):
 
 main.add_command(exec_cmd)
 main.add_command(copy_cmd)
+main.add_command(sync_cmd)
 main.add_command(attach_cmd)
 main.add_command(list_python_apis)
 main.add_command(mcp)

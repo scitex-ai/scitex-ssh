@@ -97,6 +97,89 @@ def copy_from(
     return SSHResult(proc.returncode, proc.stdout, proc.stderr)
 
 
+def sync_dir(
+    host: str,
+    local: str,
+    remote: str,
+    *,
+    direction: str = "push",
+    exclude: Sequence[str] = (),
+    delete: bool = False,
+    extra_opts: Sequence[str] = (),
+    ssh_opts: Sequence[str] = (),
+    runner=None,
+) -> SSHResult:
+    """rsync a directory one-way between local and ``host`` over ssh.
+
+    A thin, policy-free wrapper over ``rsync -a`` for syncing a directory
+    tree between the local machine and a remote host. Unlike ``copy_to`` /
+    ``copy_from`` (single-shot scp, no delta/exclude), this does an
+    incremental transfer with per-file excludes — the right tool for
+    mirroring a per-user dir (e.g. ``~/.scitex/scholar/library``) between
+    a WSL host and an HPC login node.
+
+    The primitive is deliberately generic: it never decides *what* to
+    exclude or *whether* to delete. Callers pass ``exclude`` globs and any
+    ``extra_opts`` (``--checksum``, ``--mkpath``, ``--dry-run``, …); any
+    post-sync step (e.g. rebuilding a derived index) is the caller's job
+    via ``exec_remote``.
+
+    Parameters
+    ----------
+    host : str
+        Remote ssh host (an ``~/.ssh/config`` alias like ``spartan`` works).
+    local : str
+        Local directory path. Trailing-slash semantics are rsync's and are
+        passed through verbatim: ``src/`` copies *contents*, ``src`` copies
+        the dir itself. The caller controls this.
+    remote : str
+        Remote directory path on ``host``.
+    direction : {"push", "pull"}
+        ``push`` sends ``local`` → ``host:remote`` (default); ``pull`` pulls
+        ``host:remote`` → ``local``.
+    exclude : sequence of str
+        Glob patterns passed as ``--exclude=<pat>`` (e.g. ``index.db``,
+        ``*.db-wal``). Never ship a live sqlite/WAL file — exclude it and
+        rebuild or snapshot it caller-side.
+    delete : bool
+        Add ``--delete`` (mirror deletions). Off by default: an additive
+        merge library should not have receiver-side files deleted.
+    extra_opts : sequence of str
+        Raw rsync flags appended verbatim (escape hatch for
+        ``--checksum``, ``--mkpath``, ``--dry-run``, ``--info=progress2``).
+    ssh_opts : sequence of str
+        ssh flags for the transport; wired via ``-e 'ssh <opts>'`` (e.g.
+        ``['-o', 'BatchMode=yes']`` for non-interactive cron).
+    runner : callable, optional
+        ``subprocess.run``-shaped invoker; defaults to ``subprocess.run``.
+        Pass a hand-rolled fake from tests to observe argv without mocks.
+    """
+    if direction not in ("push", "pull"):
+        raise ValueError(f"direction must be 'push' or 'pull', got {direction!r}")
+    if runner is None:
+        runner = subprocess.run
+
+    local_end = local
+    remote_end = f"{host}:{remote}"
+    src, dest = (
+        (local_end, remote_end) if direction == "push" else (remote_end, local_end)
+    )
+
+    cmd = [
+        "rsync",
+        "-a",
+        "--partial",
+        *(["--delete"] if delete else []),
+        *extra_opts,
+        *[f"--exclude={pat}" for pat in exclude],
+        *(["-e", "ssh " + " ".join(ssh_opts)] if ssh_opts else []),
+        src,
+        dest,
+    ]
+    proc = runner(cmd, capture_output=True, text=True)
+    return SSHResult(proc.returncode, proc.stdout, proc.stderr)
+
+
 def attach(
     host: str,
     command: str | None = None,

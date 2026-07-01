@@ -117,6 +117,84 @@ def copy_cmd(src, dest, recursive, ssh_opts, dry_run, yes):
     raise SystemExit(result.returncode)
 
 
+@click.command("sync")
+@click.argument("src")
+@click.argument("dest")
+@click.option(
+    "--exclude",
+    "exclude",
+    multiple=True,
+    help="Glob to exclude (repeatable), e.g. --exclude index.db --exclude '*.db-wal'.",
+)
+@click.option("--delete", is_flag=True, help="Mirror deletions (rsync --delete).")
+@click.option(
+    "--extra-opts",
+    default=None,
+    help='Extra rsync flags as one shell-quoted string (e.g. "--checksum --mkpath").',
+)
+@click.option(
+    "--ssh-opts",
+    default=None,
+    help="Extra ssh flags as a single shell-quoted string (wired via rsync -e).",
+)
+@click.option("--dry-run", is_flag=True, help="Print plan without running rsync.")
+@click.option(
+    "-y", "--yes", is_flag=True, help="Suppress interactive confirmation (assume yes)."
+)
+def sync_cmd(src, dest, exclude, delete, extra_opts, ssh_opts, dry_run, yes):
+    """Rsync a directory one-way between local and a remote HOST:PATH.
+
+    \b
+    Example:
+      $ scitex-ssh sync ~/.scitex/scholar/library/ spartan:~/.scitex/scholar/library/ \\
+          --exclude index.db --exclude '*.db-wal' --exclude '*.db-shm'
+      $ scitex-ssh sync spartan:~/data/ ./data/ --delete
+    """
+    src_host, src_path = _split_host_path(src)
+    dest_host, dest_path = _split_host_path(dest)
+
+    if src_host and dest_host:
+        click.secho(
+            "ERROR: remote-to-remote sync is not supported.", fg="red", err=True
+        )
+        raise SystemExit(2)
+    if not src_host and not dest_host:
+        click.secho(
+            "ERROR: exactly one of SRC or DEST must be HOST:PATH.", fg="red", err=True
+        )
+        raise SystemExit(2)
+
+    if dest_host:
+        direction, host, local, remote = "push", dest_host, src_path, dest_path
+    else:
+        direction, host, local, remote = "pull", src_host, dest_path, src_path
+
+    if dry_run:
+        click.echo(
+            f"DRY RUN — would rsync ({direction}) {src} -> {dest} "
+            f"(exclude={list(exclude)}, delete={delete})"
+        )
+        return
+
+    from scitex_ssh import sync_dir
+
+    result = sync_dir(
+        host,
+        local,
+        remote,
+        direction=direction,
+        exclude=exclude,
+        delete=delete,
+        extra_opts=_split_opts(extra_opts),
+        ssh_opts=_split_opts(ssh_opts),
+    )
+    if result.stdout:
+        click.echo(result.stdout, nl=False)
+    if result.stderr:
+        click.echo(result.stderr, err=True, nl=False)
+    raise SystemExit(result.returncode)
+
+
 @click.command("attach")
 @click.argument("host")
 @click.option("--command", "-c", default=None, help="Command to run after attaching.")

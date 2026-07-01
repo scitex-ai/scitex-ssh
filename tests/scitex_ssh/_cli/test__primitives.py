@@ -21,6 +21,7 @@ from scitex_ssh._cli._primitives import (
     attach_cmd,
     copy_cmd,
     exec_cmd,
+    sync_cmd,
 )
 
 
@@ -234,6 +235,85 @@ class TestCopyCmd:
         runner.invoke(copy_cmd, ["myhost:/etc/hostname", "./hostname"])
         # Assert
         assert subprocess_shim.argv("scp") == ["myhost:/etc/hostname", "./hostname"]
+
+
+class TestSyncCmd:
+    def test_dry_run_exits_zero(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(
+            sync_cmd, ["./lib/", "spartan:~/lib/", "--dry-run"]
+        )
+        # Assert
+        assert result.exit_code == 0
+
+    def test_dry_run_announces_push_direction(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(
+            sync_cmd, ["./lib/", "spartan:~/lib/", "--dry-run"]
+        )
+        # Assert
+        assert "push" in result.output
+
+    def test_local_to_local_sync_exits_two(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(sync_cmd, ["./a/", "./b/"])
+        # Assert
+        assert result.exit_code == 2
+
+    def test_remote_to_remote_sync_reports_unsupported(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(sync_cmd, ["h1:/a/", "h2:/b/"])
+        # Assert
+        assert "remote-to-remote" in result.output
+
+    def test_push_invokes_rsync_once(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("rsync", rc=0)
+        runner = CliRunner()
+        # Act
+        runner.invoke(sync_cmd, ["./lib/", "spartan:~/lib/"])
+        # Assert
+        assert subprocess_shim.call_count("rsync") == 1
+
+    def test_push_builds_remote_dest_argv(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("rsync", rc=0)
+        runner = CliRunner()
+        # Act
+        runner.invoke(sync_cmd, ["./lib/", "spartan:~/lib/"])
+        # Assert
+        argv = subprocess_shim.argv("rsync")
+        assert argv[-2:] == ["./lib/", "spartan:~/lib/"]
+
+    def test_exclude_options_reach_rsync(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("rsync", rc=0)
+        runner = CliRunner()
+        # Act
+        runner.invoke(
+            sync_cmd,
+            ["./lib/", "spartan:~/lib/", "--exclude", "index.db", "--exclude", "*.db-wal"],
+        )
+        # Assert
+        argv = subprocess_shim.argv("rsync")
+        assert "--exclude=index.db" in argv and "--exclude=*.db-wal" in argv
+
+    def test_propagates_nonzero_returncode(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("rsync", rc=23, stderr="partial\n")
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(sync_cmd, ["./lib/", "spartan:~/lib/"])
+        # Assert
+        assert result.exit_code == 23
 
 
 def _run_attach(host, *, bin_dir):
