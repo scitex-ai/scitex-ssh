@@ -194,8 +194,9 @@ def test_sync_dir_returns_sshresult_instance(subprocess_shim):
 
 def test_sync_dir_rejects_unknown_direction():
     # Arrange
+    # Act
     ctx = pytest.raises(ValueError)
-    # Act / Assert
+    # Assert
     with ctx:
         sync_dir("h", "/l/", "~/r/", direction="sideways")
 
