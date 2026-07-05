@@ -503,4 +503,60 @@ class TestTunnelRenderArgv:
         assert "invalid tunnel profile" in result.output
 
 
+class TestTunnelForward:
+    """`tunnel forward`: discovery-file -> ssh forward command (via --dry-run)."""
+
+    _DISCOVERY = {
+        "node": "spartan-gpgpu014",
+        "litellm_port": 4000,
+        "vllm_port": 8765,
+        "model": "qwen36-35b-a3b",
+        "key": "sk-clew-local",
+    }
+
+    def _write(self, tmp_path):
+        p = tmp_path / "qwen-endpoint.json"
+        p.write_text(json.dumps(self._DISCOVERY))
+        return str(p)
+
+    def test_dry_run_exits_zero(self, tmp_path):
+        # Arrange
+        runner = CliRunner()
+        path = self._write(tmp_path)
+        # Act
+        result = runner.invoke(main, ["tunnel", "forward", "--discovery", path, "--dry-run"])
+        # Assert
+        assert result.exit_code == 0
+
+    def test_dry_run_renders_node_from_discovery(self, tmp_path):
+        # Arrange
+        runner = CliRunner()
+        path = self._write(tmp_path)
+        # Act
+        result = runner.invoke(main, ["tunnel", "forward", "--discovery", path, "--dry-run"])
+        # Assert
+        assert "-L 127.0.0.1:4000:spartan-gpgpu014:4000" in result.output
+
+    def test_dry_run_uses_via_as_destination(self, tmp_path):
+        # Arrange
+        runner = CliRunner()
+        path = self._write(tmp_path)
+        # Act
+        result = runner.invoke(
+            main,
+            ["tunnel", "forward", "--discovery", path, "--via", "spartan", "--dry-run"],
+        )
+        # Assert
+        assert result.output.strip().endswith(" spartan")
+
+    def test_missing_discovery_file_exits_1(self, tmp_path):
+        # Arrange
+        runner = CliRunner()
+        missing = str(tmp_path / "nope.json")
+        # Act
+        result = runner.invoke(main, ["tunnel", "forward", "--discovery", missing, "--dry-run"])
+        # Assert
+        assert result.exit_code == 1
+
+
 # EOF
