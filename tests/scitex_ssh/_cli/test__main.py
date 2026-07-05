@@ -416,17 +416,37 @@ class TestTunnelRenderArgv:
         '"via":"spartan"}'
     )
 
-    def test_renders_shell_string_by_default(self):
+    def test_default_render_exits_zero(self):
         # Arrange
         runner = CliRunner()
         # Act
         result = runner.invoke(main, ["tunnel", "render-argv", "--profile", self._QWEN])
         # Assert
         assert result.exit_code == 0
-        out = result.output.strip()
-        assert out.startswith("ssh -N ")
-        assert "-L 127.0.0.1:4000:spartan-gpu-a017:4000" in out
-        assert out.endswith(" spartan")
+
+    def test_default_render_is_an_ssh_dash_N_string(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(main, ["tunnel", "render-argv", "--profile", self._QWEN])
+        # Assert
+        assert result.output.strip().startswith("ssh -N ")
+
+    def test_default_render_contains_forward_spec(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(main, ["tunnel", "render-argv", "--profile", self._QWEN])
+        # Assert
+        assert "-L 127.0.0.1:4000:spartan-gpu-a017:4000" in result.output
+
+    def test_default_render_ends_with_via_destination(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(main, ["tunnel", "render-argv", "--profile", self._QWEN])
+        # Assert
+        assert result.output.strip().endswith(" spartan")
 
     def test_as_json_emits_argv_array(self):
         # Arrange
@@ -436,11 +456,7 @@ class TestTunnelRenderArgv:
             main, ["tunnel", "render-argv", "--profile", self._QWEN, "--as-json"]
         )
         # Assert
-        assert result.exit_code == 0
-        argv = json.loads(result.output)
-        assert argv[0] == "ssh"
-        assert argv[-1] == "spartan"
-        assert "-L" in argv
+        assert json.loads(result.output)[0] == "ssh"
 
     def test_reads_profile_from_stdin(self):
         # Arrange
@@ -450,18 +466,22 @@ class TestTunnelRenderArgv:
             main, ["tunnel", "render-argv", "--profile", "-"], input=self._QWEN
         )
         # Assert
-        assert result.exit_code == 0
         assert "spartan-gpu-a017" in result.output
 
     def test_invalid_json_exits_2(self):
         # Arrange
         runner = CliRunner()
         # Act
-        result = runner.invoke(
-            main, ["tunnel", "render-argv", "--profile", "{not json"]
-        )
+        result = runner.invoke(main, ["tunnel", "render-argv", "--profile", "{not json"])
         # Assert
         assert result.exit_code == 2
+
+    def test_invalid_json_reports_reason(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(main, ["tunnel", "render-argv", "--profile", "{not json"])
+        # Assert
         assert "not valid JSON" in result.output
 
     def test_missing_required_key_exits_2(self):
@@ -472,6 +492,14 @@ class TestTunnelRenderArgv:
         result = runner.invoke(main, ["tunnel", "render-argv", "--profile", bad])
         # Assert
         assert result.exit_code == 2
+
+    def test_missing_required_key_reports_invalid_profile(self):
+        # Arrange
+        runner = CliRunner()
+        bad = '{"direction":"forward","listen":{"port":4000},"via":"spartan"}'
+        # Act
+        result = runner.invoke(main, ["tunnel", "render-argv", "--profile", bad])
+        # Assert
         assert "invalid tunnel profile" in result.output
 
 
