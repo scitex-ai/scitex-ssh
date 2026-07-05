@@ -95,6 +95,19 @@ def _default_host() -> str:
     return socket.gethostname().split(".")[0]
 
 
+def _read_profile_arg(profile: str) -> str:
+    """Resolve a --profile value: inline JSON, ``@PATH`` for a file, or ``-``
+    for stdin."""
+    import sys
+
+    if profile == "-":
+        return sys.stdin.read()
+    if profile.startswith("@"):
+        with open(profile[1:]) as fh:
+            return fh.read()
+    return profile
+
+
 @click.group(
     cls=CategorizedGroup,
     invoke_without_command=True,
@@ -311,6 +324,56 @@ def tunnel_status_deprecated(ctx, port, as_json):
     """(deprecated) Use `tunnel check-status`."""
     _deprecation_warn("tunnel status", "tunnel check-status")
     ctx.invoke(tunnel_status, port=port, as_json=as_json)
+
+
+@tunnel.command("render-argv")
+@click.option(
+    "--profile",
+    required=True,
+    help="Tunnel spec as JSON. Inline, or @PATH to read a file, or - for stdin.",
+)
+@click.option(
+    "--as-json",
+    "as_json",
+    is_flag=True,
+    help="Emit the argv array as JSON instead of a shell-ready string.",
+)
+def tunnel_render_argv(profile, as_json):
+    """Render an ssh forward/reverse tunnel command from a JSON spec.
+
+    \b
+    Prints a single shell-safe `ssh -N ...` line (the default) suitable to
+    drop into a keepalive supervisor's opaque, foreground-blocking command
+    field; or the argv array as JSON with --as-json. This is pure string
+    construction — it does NOT open any connection.
+
+    \b
+    Example:
+      $ scitex-ssh tunnel render-argv --profile '{"direction":"forward",
+          "listen":{"host":"127.0.0.1","port":4000},
+          "target":{"host":"spartan-gpu-a017","port":4000},"via":"spartan"}'
+      ssh -N -o ExitOnForwardFailure=yes ... -L 127.0.0.1:4000:spartan-gpu-a017:4000 spartan
+    """
+    import json as _json
+
+    from scitex_ssh._tunnel_render import TunnelSpec, render_argv, render_command
+
+    raw = _read_profile_arg(profile)
+    try:
+        data = _json.loads(raw)
+    except _json.JSONDecodeError as e:
+        click.secho(f"ERROR: --profile is not valid JSON: {e}", fg="red", err=True)
+        raise SystemExit(2)
+    try:
+        spec = TunnelSpec.from_dict(data)
+    except (ValueError, KeyError, TypeError) as e:
+        click.secho(f"ERROR: invalid tunnel profile: {e}", fg="red", err=True)
+        raise SystemExit(2)
+
+    if as_json:
+        click.echo(_json.dumps(render_argv(spec)))
+    else:
+        click.echo(render_command(spec))
 
 
 # -----------------------------------------------------------------------
