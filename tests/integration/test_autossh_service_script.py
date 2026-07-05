@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
-"""Tests for the bundled setup-autossh-service.sh reverse-tunnel unit.
+"""Integration test for the bundled setup-autossh-service.sh reverse-tunnel unit.
 
-No mocks: asserts directly on the shipped script text (resolved the same way
-production does, via ``scitex_ssh._SCRIPTS_DIR``). Locks in the keepalive /
+Lives in tests/integration/ (not tests/scitex_ssh/) because the asset under
+test is a bundled shell script owned by __init__.py's setup(), with no module
+basename to mirror — the canonical home per scitex-dev audit-project (PS-204
+orphan-test rule / PS302).
+
+No mocks: asserts directly on the shipped script text, resolved the same way
+production does (via scitex_ssh._SCRIPTS_DIR). Locks in the keepalive /
 ExitOnForwardFailure options that keep a reverse -R tunnel from silently
 sitting on a dead forward after a network blip.
 """
