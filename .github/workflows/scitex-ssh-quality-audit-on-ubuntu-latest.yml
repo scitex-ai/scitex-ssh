@@ -41,7 +41,9 @@ jobs:
           python-version: "3.12"
 
       - name: Fetch main ref for --new-only baseline
-        run: git fetch origin main:main
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          git show-ref --verify --quiet refs/heads/main || git branch main origin/main
 
       - name: Install package + audit tooling
         run: |
