@@ -76,3 +76,4 @@ GITIGNORED/
 
 .claude/
 .venv/
+/.worktrees/
