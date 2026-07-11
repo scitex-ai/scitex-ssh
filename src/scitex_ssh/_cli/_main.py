@@ -5,7 +5,7 @@ import click
 
 from ._introspect import list_python_apis
 from ._mcp import mcp
-from ._primitives import attach_cmd, copy_cmd, exec_cmd, sync_cmd
+from ._primitives import attach_cmd, copy_cmd, exec_cmd, probe_cmd, sync_cmd
 from ._tunnel import (
     _default_host,
     _deprecation_warn,
@@ -18,7 +18,7 @@ from ._tunnel import (
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
 
 COMMAND_CATEGORIES = [
-    ("SSH Primitives", ["exec", "copy", "sync", "attach"]),
+    ("SSH Primitives", ["exec", "copy", "sync", "probe", "attach"]),
     ("Tunnel Management", ["tunnel"]),
     ("Integration", ["mcp", "list-python-apis"]),
 ]
@@ -170,6 +170,7 @@ main.add_command(tunnel)
 main.add_command(exec_cmd)
 main.add_command(copy_cmd)
 main.add_command(sync_cmd)
+main.add_command(probe_cmd)
 main.add_command(attach_cmd)
 main.add_command(list_python_apis)
 main.add_command(mcp)

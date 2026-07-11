@@ -195,6 +195,68 @@ def sync_cmd(src, dest, exclude, delete, extra_opts, ssh_opts, dry_run, yes):
     raise SystemExit(result.returncode)
 
 
+@click.command("probe")
+@click.argument("host")
+@click.option(
+    "--requires",
+    "requires",
+    multiple=True,
+    help="Executable to check for via `command -v` on the remote (repeatable), e.g. --requires apptainer.",
+)
+@click.option(
+    "--ssh-opts",
+    default=None,
+    help="Extra ssh flags as a single shell-quoted string.",
+)
+@click.option("--timeout", type=float, default=None, help="Timeout in seconds.")
+@click.option("--json", "as_json", is_flag=True, help="Emit structured JSON output.")
+def probe_cmd(host, requires, ssh_opts, timeout, as_json):
+    """Check HOST is reachable and (optionally) which executables it has.
+
+    Exits 0 if reachable and every --requires capability is present, 1 if
+    reachable but missing a capability, 2 if HOST is unreachable.
+
+    \b
+    Example:
+      $ scitex-ssh probe spartan --requires apptainer --requires rsync
+      $ scitex-ssh probe spartan --json
+    """
+    from scitex_ssh import probe_remote
+
+    result = probe_remote(
+        host, requires=requires, ssh_opts=_split_opts(ssh_opts), timeout=timeout
+    )
+
+    if as_json:
+        import json as _json
+
+        click.echo(
+            _json.dumps(
+                {
+                    "host": host,
+                    "reachable": result.reachable,
+                    "capabilities": result.capabilities,
+                    "ok": result.ok,
+                },
+                indent=2,
+            )
+        )
+    else:
+        if not result.reachable:
+            click.secho(f"UNREACHABLE: {host}", fg="red", err=True)
+        else:
+            click.secho(f"REACHABLE: {host}", fg="green")
+            for name, present in result.capabilities.items():
+                colour = "green" if present else "red"
+                click.secho(
+                    f"  {name}: {'present' if present else 'MISSING'}", fg=colour
+                )
+
+    if not result.reachable:
+        raise SystemExit(2)
+    raise SystemExit(0 if result.ok else 1)
+
+
 @click.command("attach")
 @click.argument("host")
 @click.option("--command", "-c", default=None, help="Command to run after attaching.")

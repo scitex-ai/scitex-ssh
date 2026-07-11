@@ -9,9 +9,19 @@ test fails honestly.
 
 from __future__ import annotations
 
+import shlex
+
 import pytest
 
-from scitex_ssh import SSHResult, copy_from, copy_to, exec_remote, sync_dir
+from scitex_ssh import (
+    ProbeResult,
+    SSHResult,
+    copy_from,
+    copy_to,
+    exec_remote,
+    probe_remote,
+    sync_dir,
+)
 
 
 def test_exec_remote_builds_plain_ssh_argv_from_host_and_command(subprocess_shim):
@@ -199,6 +209,149 @@ def test_sync_dir_rejects_unknown_direction():
     # Assert
     with ctx:
         sync_dir("h", "/l/", "~/r/", direction="sideways")
+
+
+def test_probe_remote_sends_marker_echo_and_host_via_ssh(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\n")
+    # Act
+    probe_remote("spartan")
+    # Assert
+    argv = subprocess_shim.argv("ssh")
+    assert argv[0] == "spartan"
+    assert "echo __SCITEX_SSH_PROBE_REACHABLE__" in argv[1]
+
+
+def test_probe_remote_marks_unreachable_on_nonzero_exit(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("ssh", rc=255, stderr="Connection refused")
+    # Act
+    result = probe_remote("deadhost")
+    # Assert
+    assert result.reachable is False
+
+
+def test_probe_remote_returns_empty_capabilities_when_unreachable(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("ssh", rc=255, stderr="Connection refused")
+    # Act
+    result = probe_remote("deadhost", requires=["apptainer"])
+    # Assert
+    assert result.capabilities == {}
+
+
+def test_probe_remote_marks_reachable_on_zero_exit_with_marker(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\n")
+    # Act
+    result = probe_remote("spartan")
+    # Assert
+    assert result.reachable is True
+
+
+def test_probe_remote_parses_present_capability_by_order(subprocess_shim):
+    # Arrange
+    subprocess_shim.install(
+        "ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\nyes\n"
+    )
+    # Act
+    result = probe_remote("spartan", requires=["apptainer"])
+    # Assert
+    assert result.capabilities == {"apptainer": True}
+
+
+def test_probe_remote_parses_missing_capability_by_order(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\nno\n")
+    # Act
+    result = probe_remote("spartan", requires=["apptainer"])
+    # Assert
+    assert result.capabilities == {"apptainer": False}
+
+
+def test_probe_remote_tolerates_motd_noise_before_marker(subprocess_shim):
+    # Arrange
+    subprocess_shim.install(
+        "ssh",
+        rc=0,
+        stdout="Welcome to Spartan\nMOTD line 2\n__SCITEX_SSH_PROBE_REACHABLE__\nyes\n",
+    )
+    # Act
+    result = probe_remote("spartan", requires=["rsync"])
+    # Assert
+    assert result.reachable is True and result.capabilities == {"rsync": True}
+
+
+def test_probe_remote_maps_multiple_requires_in_order(subprocess_shim):
+    # Arrange
+    subprocess_shim.install(
+        "ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\nyes\nno\n"
+    )
+    # Act
+    result = probe_remote("spartan", requires=["rsync", "apptainer"])
+    # Assert
+    assert result.capabilities == {"rsync": True, "apptainer": False}
+
+
+def test_probe_remote_shell_quotes_requirement_names(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\nno\n")
+    dangerous = "some tool; rm -rf /"
+    # Act
+    probe_remote("spartan", requires=[dangerous])
+    # Assert — the requirement round-trips as ONE shell token, proving it
+    # was quoted rather than word-split/executed as separate commands.
+    remote_cmd = subprocess_shim.argv("ssh")[1]
+    assert dangerous in shlex.split(remote_cmd)
+
+
+def test_probe_remote_returns_probeResult_instance(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\n")
+    # Act
+    result = probe_remote("spartan")
+    # Assert
+    assert isinstance(result, ProbeResult)
+
+
+def test_probe_result_ok_true_when_reachable_and_no_requirements():
+    # Arrange
+    result = ProbeResult(reachable=True, capabilities={})
+    # Act
+    # Assert
+    assert result.ok is True
+
+
+def test_probe_result_ok_false_when_unreachable():
+    # Arrange
+    result = ProbeResult(reachable=False, capabilities={})
+    # Act
+    # Assert
+    assert result.ok is False
+
+
+def test_probe_result_ok_false_when_a_capability_is_missing():
+    # Arrange
+    result = ProbeResult(reachable=True, capabilities={"apptainer": False})
+    # Act
+    # Assert
+    assert result.ok is False
+
+
+def test_probe_result_has_reads_capability_by_name():
+    # Arrange
+    result = ProbeResult(reachable=True, capabilities={"apptainer": True})
+    # Act
+    # Assert
+    assert result.has("apptainer") is True
+
+
+def test_probe_result_has_defaults_to_false_for_unknown_name():
+    # Arrange
+    result = ProbeResult(reachable=True, capabilities={})
+    # Act
+    # Assert
+    assert result.has("nope") is False
 
 
 # EOF
