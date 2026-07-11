@@ -9,6 +9,7 @@ No mocks. Pure helpers are tested directly; exec/copy invoke the real
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -21,6 +22,7 @@ from scitex_ssh._cli._primitives import (
     attach_cmd,
     copy_cmd,
     exec_cmd,
+    probe_cmd,
     sync_cmd,
 )
 
@@ -314,6 +316,89 @@ class TestSyncCmd:
         result = runner.invoke(sync_cmd, ["./lib/", "spartan:~/lib/"])
         # Assert
         assert result.exit_code == 23
+
+
+class TestProbeCmd:
+    def test_reachable_no_requirements_exits_zero(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install(
+            "ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\n"
+        )
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(probe_cmd, ["spartan"])
+        # Assert
+        assert result.exit_code == 0
+
+    def test_unreachable_exits_two(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("ssh", rc=255, stderr="Connection refused")
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(probe_cmd, ["deadhost"])
+        # Assert
+        assert result.exit_code == 2
+
+    def test_unreachable_reports_host_on_stderr(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("ssh", rc=255, stderr="Connection refused")
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(probe_cmd, ["deadhost"])
+        # Assert
+        assert "deadhost" in result.output
+
+    def test_missing_capability_exits_one(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install(
+            "ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\nno\n"
+        )
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(probe_cmd, ["spartan", "--requires", "apptainer"])
+        # Assert
+        assert result.exit_code == 1
+
+    def test_present_capability_reported_in_output(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install(
+            "ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\nyes\n"
+        )
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(probe_cmd, ["spartan", "--requires", "apptainer"])
+        # Assert
+        assert "apptainer" in result.output and "present" in result.output
+
+    def test_json_output_is_valid_json_with_expected_keys(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install(
+            "ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\nyes\n"
+        )
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(
+            probe_cmd, ["spartan", "--requires", "apptainer", "--json"]
+        )
+        # Assert
+        payload = json.loads(result.output)
+        assert payload == {
+            "host": "spartan",
+            "reachable": True,
+            "capabilities": {"apptainer": True},
+            "ok": True,
+        }
+
+    def test_requires_option_reaches_ssh_argv(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install(
+            "ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\nno\n"
+        )
+        runner = CliRunner()
+        # Act
+        runner.invoke(probe_cmd, ["spartan", "--requires", "apptainer"])
+        # Assert
+        assert "apptainer" in subprocess_shim.argv("ssh")[1]
 
 
 def _run_attach(host, *, bin_dir):

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+import shlex
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Sequence
 
 
@@ -16,6 +17,23 @@ class SSHResult:
     @property
     def success(self) -> bool:
         return self.returncode == 0
+
+
+@dataclass
+class ProbeResult:
+    reachable: bool
+    capabilities: dict = field(default_factory=dict)
+    returncode: int = 0
+    stdout: str = ""
+    stderr: str = ""
+
+    @property
+    def ok(self) -> bool:
+        """Reachable and every requested capability present (vacuously True if none requested)."""
+        return self.reachable and all(self.capabilities.values())
+
+    def has(self, name: str) -> bool:
+        return self.capabilities.get(name, False)
 
 
 def exec_remote(
@@ -49,6 +67,79 @@ def exec_remote(
             f"ssh {host!r} failed (rc={proc.returncode}): {proc.stderr.strip()}"
         )
     return result
+
+
+def probe_remote(
+    host: str,
+    *,
+    requires: Sequence[str] = (),
+    ssh_opts: Sequence[str] = (),
+    timeout: float | None = None,
+    runner=None,
+) -> ProbeResult:
+    """Reachability + capability preflight over a single ssh round-trip.
+
+    Confirms `host` answers, then checks each name in `requires` via
+    `command -v <name>` on the remote (e.g. "apptainer", "rsync"). Policy-free
+    like `sync_dir`: the caller decides which capabilities matter (what to
+    require, what to do if missing); this only reports what is there.
+
+    Capability names are matched to remote output by ORDER, not by echoing
+    the name back through the remote shell — avoids any quoting hazard for
+    unusual capability strings and tolerates login-banner/MOTD noise on
+    stdout (the reachability marker is located by scanning, not by assuming
+    it is line 0).
+
+    Parameters
+    ----------
+    host : str
+        Remote ssh host (an ``~/.ssh/config`` alias like ``spartan`` works).
+    requires : sequence of str
+        Executable names to probe for via ``command -v`` on the remote.
+        Empty by default — a bare reachability check.
+    ssh_opts : sequence of str
+        Raw ssh flags forwarded verbatim, same convention as ``exec_remote``.
+    timeout : float, optional
+        Passed through to the underlying ``ssh`` subprocess call.
+    runner : callable, optional
+        ``subprocess.run``-shaped invoker; defaults to ``subprocess.run``.
+        Pass a hand-rolled fake from tests to observe argv without mocks.
+
+    Returns
+    -------
+    ProbeResult
+        ``reachable`` is False if ssh itself failed (down, auth, timeout) —
+        in that case ``capabilities`` is always empty rather than reporting
+        every requirement as absent, since an unreachable host tells you
+        nothing about what is installed there.
+    """
+    if runner is None:
+        runner = subprocess.run
+    marker = "__SCITEX_SSH_PROBE_REACHABLE__"
+    parts = [f"echo {marker}"]
+    for req in requires:
+        q = shlex.quote(req)
+        parts.append(f"command -v {q} >/dev/null 2>&1 && echo yes || echo no")
+    remote_cmd = " ; ".join(parts)
+    cmd = ["ssh", *ssh_opts, host, remote_cmd]
+    proc = runner(cmd, capture_output=True, text=True, timeout=timeout)
+
+    lines = proc.stdout.splitlines()
+    reachable = proc.returncode == 0 and marker in lines
+    capabilities: dict = {}
+    if reachable:
+        idx = lines.index(marker)
+        cap_lines = lines[idx + 1 : idx + 1 + len(requires)]
+        for name, line in zip(requires, cap_lines):
+            capabilities[name] = line.strip() == "yes"
+
+    return ProbeResult(
+        reachable=reachable,
+        capabilities=capabilities,
+        returncode=proc.returncode,
+        stdout=proc.stdout,
+        stderr=proc.stderr,
+    )
 
 
 def copy_to(

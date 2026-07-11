@@ -40,10 +40,20 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Fetch main ref for --new-only baseline
+      - name: Fetch main/develop refs for --new-only baseline
+        # `audit-all --new-only` diffs against a local `develop` branch
+        # (the shared integration branch — see `git worktree add develop`
+        # in its own error output), NOT `github.base_ref`. Fetching only
+        # `main` here left no local `develop` ref, so every PR against
+        # develop (this repo's default PR target) silently fell back to
+        # a full strict audit instead of a diff-scoped one — surfacing
+        # every pre-existing violation as if newly introduced. Fetch both
+        # so the baseline the tool actually asks for is always present.
         run: |
-          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
-          git show-ref --verify --quiet refs/heads/main || git branch main origin/main
+          for ref in main develop; do
+            git fetch --no-tags origin "+refs/heads/${ref}:refs/remotes/origin/${ref}"
+            git show-ref --verify --quiet "refs/heads/${ref}" || git branch "${ref}" "origin/${ref}"
+          done
 
       - name: Install package + audit tooling
         run: |
