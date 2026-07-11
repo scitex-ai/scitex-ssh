@@ -211,15 +211,22 @@ def test_sync_dir_rejects_unknown_direction():
         sync_dir("h", "/l/", "~/r/", direction="sideways")
 
 
-def test_probe_remote_sends_marker_echo_and_host_via_ssh(subprocess_shim):
+def test_probe_remote_targets_host_as_first_ssh_arg(subprocess_shim):
     # Arrange
     subprocess_shim.install("ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\n")
     # Act
     probe_remote("spartan")
     # Assert
-    argv = subprocess_shim.argv("ssh")
-    assert argv[0] == "spartan"
-    assert "echo __SCITEX_SSH_PROBE_REACHABLE__" in argv[1]
+    assert subprocess_shim.argv("ssh")[0] == "spartan"
+
+
+def test_probe_remote_remote_command_echoes_the_marker(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\n")
+    # Act
+    probe_remote("spartan")
+    # Assert
+    assert "echo __SCITEX_SSH_PROBE_REACHABLE__" in subprocess_shim.argv("ssh")[1]
 
 
 def test_probe_remote_marks_unreachable_on_nonzero_exit(subprocess_shim):

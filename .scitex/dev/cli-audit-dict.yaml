@@ -21,3 +21,11 @@ intransitive_verbs:
   # rename to `<verb>-attach` / `attach start` would be worse UX).
   # Declaring it an intransitive verb records that intent and clears §1.
   - attach
+  # Same §1 escape hatch: Moby classifies `probe` as both noun and verb.
+  # In this CLI it is unambiguously the imperative "check reachability +
+  # capabilities of HOST":
+  #   scitex-ssh probe <host> --requires apptainer
+  # (mirrors `ping`/established network-tooling verb usage; a rename to
+  # `probe-check` or `check-probe` would be worse UX for a one-word verb
+  # everyone already reads as an action, e.g. "probe the target").
+  - probe
