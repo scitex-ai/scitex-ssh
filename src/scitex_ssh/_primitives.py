@@ -19,6 +19,51 @@ class SSHResult:
         return self.returncode == 0
 
 
+_SAFE_TRANSPORT_DEFAULTS = {
+    "controlmaster": "ControlMaster=no",
+    "controlpath": "ControlPath=none",
+    "clearallforwardings": "ClearAllForwardings=yes",
+}
+
+
+def _with_safe_transport_defaults(ssh_opts: Sequence[str]) -> list[str]:
+    """Prepend safe-for-automation ssh defaults unless the caller already set them.
+
+    exec_remote/sync_dir/probe_remote/copy_to/copy_from are one-shot
+    automation calls, not interactive sessions — they should never
+    silently inherit a host's interactive-session baggage:
+
+    * ControlMaster multiplexing assumes a writable ``~/.ssh/`` for the
+      control socket. Containers commonly mount it read-only for NEW
+      sockets while leaving pre-existing ones live, which makes failures
+      look host-specific ("this alias works, that one doesn't") when it
+      is really just "which socket file happened to already exist."
+    * Local/RemoteForward entries in ``~/.ssh/config`` are typically
+      scoped to one human's single interactive session (a relay, an
+      audio forward, a reverse tunnel). Concurrent automated callers all
+      hitting the same alias will port-conflict on those fixed ports.
+
+    Both default off. A caller who deliberately wants multiplexing or
+    config-level forwards can still opt in by passing their own
+    ``-o ControlMaster=...`` / ``-o ControlPath=...`` / ``-o
+    ClearAllForwardings=no`` in ``ssh_opts`` — this only fills in keys
+    the caller did not already set. ``attach`` (an interactive session
+    by design) is deliberately NOT covered by this — a human attaching
+    to a host benefits from the same multiplexing/forwards that make
+    them risky for concurrent automation.
+    """
+    already_set = {
+        ssh_opts[i + 1].split("=", 1)[0].strip().lower()
+        for i in range(len(ssh_opts) - 1)
+        if ssh_opts[i] == "-o"
+    }
+    defaults: list[str] = []
+    for key, opt in _SAFE_TRANSPORT_DEFAULTS.items():
+        if key not in already_set:
+            defaults += ["-o", opt]
+    return [*defaults, *ssh_opts]
+
+
 @dataclass
 class ProbeResult:
     reachable: bool
@@ -49,6 +94,9 @@ def exec_remote(
 
     `ssh_opts` is a list of raw ssh flags (e.g. ['-A', '-o', 'StrictHostKeyChecking=no'])
     passed through verbatim. Users opt into agent forwarding by passing '-A' themselves.
+    Defaults to `-o ControlMaster=no -o ControlPath=none -o ClearAllForwardings=yes`
+    (see `_with_safe_transport_defaults`) unless `ssh_opts` already sets one of those
+    keys — a one-shot call shouldn't inherit multiplexing or ambient config forwards.
 
     Parameters
     ----------
@@ -59,7 +107,7 @@ def exec_remote(
     """
     if runner is None:
         runner = subprocess.run
-    cmd = ["ssh", *ssh_opts, host, command]
+    cmd = ["ssh", *_with_safe_transport_defaults(ssh_opts), host, command]
     proc = runner(cmd, capture_output=True, text=True, timeout=timeout)
     result = SSHResult(proc.returncode, proc.stdout, proc.stderr)
     if check and not result.success:
@@ -98,7 +146,9 @@ def probe_remote(
         Executable names to probe for via ``command -v`` on the remote.
         Empty by default — a bare reachability check.
     ssh_opts : sequence of str
-        Raw ssh flags forwarded verbatim, same convention as ``exec_remote``.
+        Raw ssh flags forwarded verbatim, same convention as ``exec_remote``
+        (including the same safe-by-default ControlMaster/ClearAllForwardings
+        behavior — see ``_with_safe_transport_defaults``).
     timeout : float, optional
         Passed through to the underlying ``ssh`` subprocess call.
     runner : callable, optional
@@ -121,7 +171,7 @@ def probe_remote(
         q = shlex.quote(req)
         parts.append(f"command -v {q} >/dev/null 2>&1 && echo yes || echo no")
     remote_cmd = " ; ".join(parts)
-    cmd = ["ssh", *ssh_opts, host, remote_cmd]
+    cmd = ["ssh", *_with_safe_transport_defaults(ssh_opts), host, remote_cmd]
     proc = runner(cmd, capture_output=True, text=True, timeout=timeout)
 
     lines = proc.stdout.splitlines()
@@ -151,13 +201,14 @@ def copy_to(
     ssh_opts: Sequence[str] = (),
     runner=None,
 ) -> SSHResult:
-    """scp local `src` to `host:dest`. ssh_opts forwarded via -o."""
+    """scp local `src` to `host:dest`. ssh_opts forwarded via -o (same
+    safe-by-default ControlMaster/ClearAllForwardings behavior as exec_remote)."""
     if runner is None:
         runner = subprocess.run
     cmd = [
         "scp",
         *(["-r"] if recursive else []),
-        *_ssh_opts_to_scp(ssh_opts),
+        *_ssh_opts_to_scp(_with_safe_transport_defaults(ssh_opts)),
         src,
         f"{host}:{dest}",
     ]
@@ -174,13 +225,13 @@ def copy_from(
     ssh_opts: Sequence[str] = (),
     runner=None,
 ) -> SSHResult:
-    """scp `host:src` to local `dest`."""
+    """scp `host:src` to local `dest`. Same safe-by-default ssh_opts as copy_to."""
     if runner is None:
         runner = subprocess.run
     cmd = [
         "scp",
         *(["-r"] if recursive else []),
-        *_ssh_opts_to_scp(ssh_opts),
+        *_ssh_opts_to_scp(_with_safe_transport_defaults(ssh_opts)),
         f"{host}:{src}",
         dest,
     ]
@@ -240,7 +291,11 @@ def sync_dir(
         ``--checksum``, ``--mkpath``, ``--dry-run``, ``--info=progress2``).
     ssh_opts : sequence of str
         ssh flags for the transport; wired via ``-e 'ssh <opts>'`` (e.g.
-        ``['-o', 'BatchMode=yes']`` for non-interactive cron).
+        ``['-o', 'BatchMode=yes']`` for non-interactive cron). Always includes
+        the same safe-by-default ControlMaster/ClearAllForwardings behavior as
+        ``exec_remote`` (see ``_with_safe_transport_defaults``) — a plain rsync
+        transport shouldn't inherit multiplexing or ambient config forwards
+        either.
     runner : callable, optional
         ``subprocess.run``-shaped invoker; defaults to ``subprocess.run``.
         Pass a hand-rolled fake from tests to observe argv without mocks.
@@ -263,7 +318,8 @@ def sync_dir(
         *(["--delete"] if delete else []),
         *extra_opts,
         *[f"--exclude={pat}" for pat in exclude],
-        *(["-e", "ssh " + " ".join(ssh_opts)] if ssh_opts else []),
+        "-e",
+        "ssh " + " ".join(_with_safe_transport_defaults(ssh_opts)),
         src,
         dest,
     ]
