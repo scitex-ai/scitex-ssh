@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scitex-ssh"
-version = "1.1.0"
+version = "1.2.0"
 description = "SSH primitives for SciTeX (exec/copy/attach/tunnel; per-host allowlist)"
 readme = "README.md"
 license = "AGPL-3.0-only"
