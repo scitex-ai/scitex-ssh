@@ -235,8 +235,9 @@ class TestCopyCmd:
         runner = CliRunner()
         # Act
         runner.invoke(copy_cmd, ["myhost:/etc/hostname", "./hostname"])
-        # Assert
-        assert subprocess_shim.argv("scp") == ["myhost:/etc/hostname", "./hostname"]
+        # Assert — src/dest are always the last two argv elements, robust
+        # to the safe-transport-defaults prefix scitex_ssh adds by default.
+        assert subprocess_shim.argv("scp")[-2:] == ["myhost:/etc/hostname", "./hostname"]
 
 
 class TestSyncCmd:
@@ -398,7 +399,7 @@ class TestProbeCmd:
         # Act
         runner.invoke(probe_cmd, ["spartan", "--requires", "apptainer"])
         # Assert
-        assert "apptainer" in subprocess_shim.argv("ssh")[1]
+        assert "apptainer" in subprocess_shim.argv("ssh")[-1]
 
 
 def _run_attach(host, *, bin_dir):

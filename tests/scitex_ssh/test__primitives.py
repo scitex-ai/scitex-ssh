@@ -24,13 +24,27 @@ from scitex_ssh import (
 )
 
 
+SAFE_TRANSPORT_DEFAULTS = [
+    "-o",
+    "ControlMaster=no",
+    "-o",
+    "ControlPath=none",
+    "-o",
+    "ClearAllForwardings=yes",
+]
+
+
 def test_exec_remote_builds_plain_ssh_argv_from_host_and_command(subprocess_shim):
     # Arrange
     subprocess_shim.install("ssh", rc=0, stdout="hi")
     # Act
     exec_remote("spartan", "hostname")
     # Assert
-    assert subprocess_shim.argv("ssh") == ["spartan", "hostname"]
+    assert subprocess_shim.argv("ssh") == [
+        *SAFE_TRANSPORT_DEFAULTS,
+        "spartan",
+        "hostname",
+    ]
 
 
 def test_exec_remote_returns_sshresult_instance(subprocess_shim):
@@ -65,14 +79,26 @@ def test_exec_remote_passes_ssh_opts_through_verbatim(subprocess_shim):
     subprocess_shim.install("ssh", rc=0)
     # Act
     exec_remote("h", "cmd", ssh_opts=["-A", "-o", "StrictHostKeyChecking=no"])
-    # Assert
+    # Assert — caller opts are appended after the safe transport defaults,
+    # since neither sets ControlMaster/ControlPath/ClearAllForwardings.
     assert subprocess_shim.argv("ssh") == [
+        *SAFE_TRANSPORT_DEFAULTS,
         "-A",
         "-o",
         "StrictHostKeyChecking=no",
         "h",
         "cmd",
     ]
+
+
+def test_exec_remote_respects_caller_controlmaster_override(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("ssh", rc=0)
+    # Act
+    exec_remote("h", "cmd", ssh_opts=["-o", "ControlMaster=auto"])
+    # Assert — caller's explicit ControlMaster is kept, ours is not added
+    argv = subprocess_shim.argv("ssh")
+    assert argv.count("ControlMaster=auto") == 1 and "ControlMaster=no" not in argv
 
 
 def test_exec_remote_raises_runtimeerror_when_check_and_nonzero_exit(subprocess_shim):
@@ -96,9 +122,11 @@ def test_copy_to_recursive_drops_basic_flags_and_keeps_o_and_i_opts(subprocess_s
         recursive=True,
         ssh_opts=["-A", "-o", "K=V", "-i", "/key"],
     )
-    # Assert — -A dropped (not relevant for scp); -o K=V and -i /key kept
+    # Assert — -A dropped (not relevant for scp); safe defaults prepended
+    # (all -o pairs, so they survive the scp filter); -o K=V and -i /key kept
     assert subprocess_shim.argv("scp") == [
         "-r",
+        *SAFE_TRANSPORT_DEFAULTS,
         "-o",
         "K=V",
         "-i",
@@ -114,7 +142,11 @@ def test_copy_from_constructs_remote_source_argv(subprocess_shim):
     # Act
     copy_from("h", "~/src", "/local/dest")
     # Assert
-    assert subprocess_shim.argv("scp") == ["h:~/src", "/local/dest"]
+    assert subprocess_shim.argv("scp") == [
+        *SAFE_TRANSPORT_DEFAULTS,
+        "h:~/src",
+        "/local/dest",
+    ]
 
 
 def test_sync_dir_push_puts_remote_dest_last(subprocess_shim):
@@ -126,6 +158,8 @@ def test_sync_dir_push_puts_remote_dest_last(subprocess_shim):
     assert subprocess_shim.argv("rsync") == [
         "-a",
         "--partial",
+        "-e",
+        "ssh " + " ".join(SAFE_TRANSPORT_DEFAULTS),
         "/local/lib/",
         "spartan:~/lib/",
     ]
@@ -140,6 +174,8 @@ def test_sync_dir_pull_puts_remote_src_first(subprocess_shim):
     assert subprocess_shim.argv("rsync") == [
         "-a",
         "--partial",
+        "-e",
+        "ssh " + " ".join(SAFE_TRANSPORT_DEFAULTS),
         "spartan:~/lib/",
         "/local/lib/",
     ]
@@ -178,9 +214,19 @@ def test_sync_dir_wires_ssh_opts_into_e_flag(subprocess_shim):
     subprocess_shim.install("rsync", rc=0)
     # Act
     sync_dir("h", "/l/", "~/r/", ssh_opts=["-o", "BatchMode=yes"])
-    # Assert
+    # Assert — caller ssh_opts appended after the safe transport defaults
     argv = subprocess_shim.argv("rsync")
-    assert argv[argv.index("-e") + 1] == "ssh -o BatchMode=yes"
+    expected = "ssh " + " ".join([*SAFE_TRANSPORT_DEFAULTS, "-o", "BatchMode=yes"])
+    assert argv[argv.index("-e") + 1] == expected
+
+
+def test_sync_dir_always_passes_e_flag_even_with_no_caller_ssh_opts(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("rsync", rc=0)
+    # Act
+    sync_dir("h", "/l/", "~/r/")
+    # Assert — the safe defaults mean -e is never omitted, unlike before
+    assert "-e" in subprocess_shim.argv("rsync")
 
 
 def test_sync_dir_appends_extra_opts_verbatim(subprocess_shim):
@@ -211,13 +257,13 @@ def test_sync_dir_rejects_unknown_direction():
         sync_dir("h", "/l/", "~/r/", direction="sideways")
 
 
-def test_probe_remote_targets_host_as_first_ssh_arg(subprocess_shim):
-    # Arrange
+def test_probe_remote_targets_host_as_second_to_last_ssh_arg(subprocess_shim):
+    # Arrange — safe transport defaults precede host/remote_cmd now
     subprocess_shim.install("ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\n")
     # Act
     probe_remote("spartan")
     # Assert
-    assert subprocess_shim.argv("ssh")[0] == "spartan"
+    assert subprocess_shim.argv("ssh")[-2] == "spartan"
 
 
 def test_probe_remote_remote_command_echoes_the_marker(subprocess_shim):
@@ -226,7 +272,17 @@ def test_probe_remote_remote_command_echoes_the_marker(subprocess_shim):
     # Act
     probe_remote("spartan")
     # Assert
-    assert "echo __SCITEX_SSH_PROBE_REACHABLE__" in subprocess_shim.argv("ssh")[1]
+    assert "echo __SCITEX_SSH_PROBE_REACHABLE__" in subprocess_shim.argv("ssh")[-1]
+
+
+def test_probe_remote_includes_safe_transport_defaults(subprocess_shim):
+    # Arrange
+    subprocess_shim.install("ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\n")
+    # Act
+    probe_remote("spartan")
+    # Assert
+    argv = subprocess_shim.argv("ssh")
+    assert argv[: len(SAFE_TRANSPORT_DEFAULTS)] == SAFE_TRANSPORT_DEFAULTS
 
 
 def test_probe_remote_marks_unreachable_on_nonzero_exit(subprocess_shim):
@@ -308,7 +364,7 @@ def test_probe_remote_shell_quotes_requirement_names(subprocess_shim):
     probe_remote("spartan", requires=[dangerous])
     # Assert — the requirement round-trips as ONE shell token, proving it
     # was quoted rather than word-split/executed as separate commands.
-    remote_cmd = subprocess_shim.argv("ssh")[1]
+    remote_cmd = subprocess_shim.argv("ssh")[-1]
     assert dangerous in shlex.split(remote_cmd)
 
 
