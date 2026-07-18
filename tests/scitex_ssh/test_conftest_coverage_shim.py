@@ -19,9 +19,9 @@ from pathlib import Path
 
 
 def _load_conftest():
-    """Import the sibling conftest by path — `tests/` is not a package, so a
+    """Import the tests/ conftest by path — `tests/` is not a package, so a
     plain `import conftest` is not resolvable under every rootdir."""
-    path = Path(__file__).resolve().parent / "conftest.py"
+    path = Path(__file__).resolve().parent.parent / "conftest.py"
     spec = importlib.util.spec_from_file_location("_ssh_tests_conftest", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
