@@ -45,12 +45,22 @@ def _ensure_subprocess_coverage_shim() -> None:
     coverage in every child Python interpreter via
     `coverage.process_startup()`.
 
-    Only installed when the target venv can actually import coverage —
-    a coverage hook in a venv without coverage is pure noise.
+    Installed ONLY into this project's own venv, and only when coverage is
+    importable there. Both guards matter:
+
+    - `purelib` is whatever venv happens to be running the suite. On shared
+      hosts that can be a fleet-wide venv (e.g. /opt/venv-*), and dropping a
+      file there makes an unrelated toolchain pay for our test config.
+    - CI installs dependencies to a --target dir and leaves its venv
+      root-owned + read-only, so the write there has always raised OSError
+      and been skipped anyway. Restricting the target loses no coverage that
+      was ever actually collected.
     """
     if importlib.util.find_spec("coverage") is None:
         return
     purelib = Path(sysconfig.get_paths()["purelib"])
+    if _PROJECT_ROOT not in purelib.parents:
+        return
     pth = purelib / "_scitex_ssh_subprocess_coverage.pth"
     try:
         if not pth.exists() or pth.read_text() != _SUBPROCESS_COVERAGE_SHIM:
