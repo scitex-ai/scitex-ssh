@@ -56,6 +56,8 @@ docs = [
 ]
 all = [
     "scitex-ssh[mcp]",
+    "scitex-ssh[dev]",
+    "scitex-ssh[docs]",
 ]
 
 [project.scripts]
