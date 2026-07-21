@@ -32,16 +32,13 @@ _CONFTEST = _load_conftest()
 _SUBPROCESS_COVERAGE_SHIM = _CONFTEST._SUBPROCESS_COVERAGE_SHIM
 
 
-def test_shim_is_not_installed_outside_the_project_venv(monkeypatch, tmp_path):
+def test_shim_is_not_installed_outside_the_project_venv(tmp_path):
     # Arrange
     foreign = tmp_path / "opt" / "shared-venv" / "site-packages"
     foreign.mkdir(parents=True)
-    monkeypatch.setattr(
-        _CONFTEST.sysconfig, "get_paths", lambda: {"purelib": str(foreign)}
-    )
 
     # Act
-    _CONFTEST._ensure_subprocess_coverage_shim()
+    _CONFTEST._ensure_subprocess_coverage_shim(purelib=foreign)
 
     # Assert
     assert list(foreign.iterdir()) == []

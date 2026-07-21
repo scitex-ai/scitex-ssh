@@ -40,7 +40,7 @@ _SUBPROCESS_COVERAGE_SHIM = (
 )
 
 
-def _ensure_subprocess_coverage_shim() -> None:
+def _ensure_subprocess_coverage_shim(purelib: Path | None = None) -> None:
     """Drop an idempotent `.pth` file in site-packages that auto-starts
     coverage in every child Python interpreter via
     `coverage.process_startup()`.
@@ -58,7 +58,8 @@ def _ensure_subprocess_coverage_shim() -> None:
     """
     if importlib.util.find_spec("coverage") is None:
         return
-    purelib = Path(sysconfig.get_paths()["purelib"])
+    if purelib is None:
+        purelib = Path(sysconfig.get_paths()["purelib"])
     if _PROJECT_ROOT not in purelib.parents:
         return
     pth = purelib / "_scitex_ssh_subprocess_coverage.pth"
