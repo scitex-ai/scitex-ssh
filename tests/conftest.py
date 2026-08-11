@@ -12,6 +12,7 @@ COVERAGE_FILE by the time conftest is loaded.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import stat
@@ -26,21 +27,45 @@ os.environ["COVERAGE_PROCESS_START"] = str(_PROJECT_ROOT / "pyproject.toml")
 os.environ["COVERAGE_FILE"] = str(_PROJECT_ROOT / ".coverage")
 
 
-def _ensure_subprocess_coverage_shim() -> None:
+_SUBPROCESS_COVERAGE_SHIM = (
+    # `.pth` files execute ONLY lines beginning with `import` — every other
+    # line is treated as a directory to add to sys.path. A multi-line `if`
+    # block is therefore silently dead code, so the whole shim must be one
+    # line. `coverage` is imported lazily inside the guard: this file is
+    # read by EVERY interpreter started from the venv, and an unconditional
+    # `import coverage` makes each one dump a ModuleNotFoundError traceback
+    # to stderr in venvs that have no coverage installed.
+    "import os; __import__('coverage').process_startup()"
+    " if os.environ.get('COVERAGE_PROCESS_START') else None\n"
+)
+
+
+def _ensure_subprocess_coverage_shim(purelib: Path | None = None) -> None:
     """Drop an idempotent `.pth` file in site-packages that auto-starts
     coverage in every child Python interpreter via
     `coverage.process_startup()`.
+
+    Installed ONLY into this project's own venv, and only when coverage is
+    importable there. Both guards matter:
+
+    - `purelib` is whatever venv happens to be running the suite. On shared
+      hosts that can be a fleet-wide venv (e.g. /opt/venv-*), and dropping a
+      file there makes an unrelated toolchain pay for our test config.
+    - CI installs dependencies to a --target dir and leaves its venv
+      root-owned + read-only, so the write there has always raised OSError
+      and been skipped anyway. Restricting the target loses no coverage that
+      was ever actually collected.
     """
-    purelib = Path(sysconfig.get_paths()["purelib"])
+    if importlib.util.find_spec("coverage") is None:
+        return
+    if purelib is None:
+        purelib = Path(sysconfig.get_paths()["purelib"])
+    if _PROJECT_ROOT not in purelib.parents:
+        return
     pth = purelib / "_scitex_ssh_subprocess_coverage.pth"
-    shim = (
-        "import os, coverage\n"
-        "if os.environ.get('COVERAGE_PROCESS_START'):\n"
-        "    coverage.process_startup()\n"
-    )
     try:
-        if not pth.exists() or pth.read_text() != shim:
-            pth.write_text(shim)
+        if not pth.exists() or pth.read_text() != _SUBPROCESS_COVERAGE_SHIM:
+            pth.write_text(_SUBPROCESS_COVERAGE_SHIM)
     except OSError:
         # site-packages may be read-only (e.g. system Python); silently
         # skip — local dev venvs are writable and that's where this matters.

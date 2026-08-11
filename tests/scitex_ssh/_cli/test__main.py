@@ -406,4 +406,157 @@ class TestHelpers:
         assert "." not in host
 
 
+class TestTunnelRenderArgv:
+    """`tunnel render-argv`: pure JSON-spec -> ssh command rendering."""
+
+    _QWEN = (
+        '{"direction":"forward",'
+        '"listen":{"host":"127.0.0.1","port":4000},'
+        '"target":{"host":"spartan-gpu-a017","port":4000},'
+        '"via":"spartan"}'
+    )
+
+    def test_default_render_exits_zero(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(main, ["tunnel", "render-argv", "--profile", self._QWEN])
+        # Assert
+        assert result.exit_code == 0
+
+    def test_default_render_is_an_ssh_dash_N_string(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(main, ["tunnel", "render-argv", "--profile", self._QWEN])
+        # Assert
+        assert result.output.strip().startswith("ssh -N ")
+
+    def test_default_render_contains_forward_spec(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(main, ["tunnel", "render-argv", "--profile", self._QWEN])
+        # Assert
+        assert "-L 127.0.0.1:4000:spartan-gpu-a017:4000" in result.output
+
+    def test_default_render_ends_with_via_destination(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(main, ["tunnel", "render-argv", "--profile", self._QWEN])
+        # Assert
+        assert result.output.strip().endswith(" spartan")
+
+    def test_as_json_emits_argv_array(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(
+            main, ["tunnel", "render-argv", "--profile", self._QWEN, "--as-json"]
+        )
+        # Assert
+        assert json.loads(result.output)[0] == "ssh"
+
+    def test_reads_profile_from_stdin(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(
+            main, ["tunnel", "render-argv", "--profile", "-"], input=self._QWEN
+        )
+        # Assert
+        assert "spartan-gpu-a017" in result.output
+
+    def test_invalid_json_exits_2(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(main, ["tunnel", "render-argv", "--profile", "{not json"])
+        # Assert
+        assert result.exit_code == 2
+
+    def test_invalid_json_reports_reason(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(main, ["tunnel", "render-argv", "--profile", "{not json"])
+        # Assert
+        assert "not valid JSON" in result.output
+
+    def test_missing_required_key_exits_2(self):
+        # Arrange
+        runner = CliRunner()
+        bad = '{"direction":"forward","listen":{"port":4000},"via":"spartan"}'
+        # Act
+        result = runner.invoke(main, ["tunnel", "render-argv", "--profile", bad])
+        # Assert
+        assert result.exit_code == 2
+
+    def test_missing_required_key_reports_invalid_profile(self):
+        # Arrange
+        runner = CliRunner()
+        bad = '{"direction":"forward","listen":{"port":4000},"via":"spartan"}'
+        # Act
+        result = runner.invoke(main, ["tunnel", "render-argv", "--profile", bad])
+        # Assert
+        assert "invalid tunnel profile" in result.output
+
+
+class TestTunnelForward:
+    """`tunnel forward`: discovery-file -> ssh forward command (via --dry-run)."""
+
+    _DISCOVERY = {
+        "node": "spartan-gpgpu014",
+        "litellm_port": 4000,
+        "vllm_port": 8765,
+        "model": "qwen36-35b-a3b",
+        "key": "sk-clew-local",
+    }
+
+    def _write(self, tmp_path):
+        p = tmp_path / "qwen-endpoint.json"
+        p.write_text(json.dumps(self._DISCOVERY))
+        return str(p)
+
+    def test_dry_run_exits_zero(self, tmp_path):
+        # Arrange
+        runner = CliRunner()
+        path = self._write(tmp_path)
+        # Act
+        result = runner.invoke(main, ["tunnel", "forward", "--discovery", path, "--dry-run"])
+        # Assert
+        assert result.exit_code == 0
+
+    def test_dry_run_renders_node_from_discovery(self, tmp_path):
+        # Arrange
+        runner = CliRunner()
+        path = self._write(tmp_path)
+        # Act
+        result = runner.invoke(main, ["tunnel", "forward", "--discovery", path, "--dry-run"])
+        # Assert
+        assert "-L 127.0.0.1:4000:spartan-gpgpu014:4000" in result.output
+
+    def test_dry_run_uses_via_as_destination(self, tmp_path):
+        # Arrange
+        runner = CliRunner()
+        path = self._write(tmp_path)
+        # Act
+        result = runner.invoke(
+            main,
+            ["tunnel", "forward", "--discovery", path, "--via", "spartan", "--dry-run"],
+        )
+        # Assert
+        assert result.output.strip().endswith(" spartan")
+
+    def test_missing_discovery_file_exits_1(self, tmp_path):
+        # Arrange
+        runner = CliRunner()
+        missing = str(tmp_path / "nope.json")
+        # Act
+        result = runner.invoke(main, ["tunnel", "forward", "--discovery", missing, "--dry-run"])
+        # Assert
+        assert result.exit_code == 1
+
+
 # EOF
