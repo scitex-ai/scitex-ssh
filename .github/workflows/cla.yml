@@ -23,4 +23,11 @@ permissions:
 jobs:
   call:
     uses: scitex-ai/.github/.github/workflows/cla.yml@main
+    # Same reason as ci.yml: the shared workflow still defaults runs_on to
+    # `spartan-cpu`, and those runners are offline. Naming the destination
+    # is also what PS-224 (runner-destination-unregistered) asks for — it
+    # was the ONLY error left in this repo's audit, and it flagged a call
+    # that had been silently relying on that default.
+    with:
+      runs_on: ${{ vars.CI_RUNS_ON }}
     secrets: inherit
