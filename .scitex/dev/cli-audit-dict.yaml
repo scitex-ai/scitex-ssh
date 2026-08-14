@@ -1,31 +1,34 @@
-# Project-local CLI audit dictionary for scitex-ssh.
+# scitex-dev audit-cli — per-package vocabulary additions
 #
-# Extends the bundled scitex-dev catalog with package-specific tokens.
-# See: scitex-dev/_skills/general/03_interface_02_cli/07_audit-cli.md
-#
-# Format expected by
-# scitex_dev/_cli/audit/_summary/_audit.py::_load_custom_dict():
-#   nouns:              [...]
-#   transitive_verbs:   [...]
+# Format expected by scitex_dev/_cli/audit/_summary/_audit.py::_load_custom_dict():
+#   nouns:            [...]
+#   transitive_verbs: [...]
 #   intransitive_verbs: [...]
+#
+# Keys must match exactly. The auditor merges this dict with its base
+# catalog + Moby POS, then classifies each CLI sub-command token.
 
 intransitive_verbs:
-  # audit-cli §1 escape hatch (the same mechanism `next` uses, and that
-  # scitex-todo uses for watch/close/comment): Moby's POS corpus
-  # classifies `attach` as BOTH a noun and a verb, so the leaf-noun
-  # rule — tightened by scitex-dev fe5a254 (operator directive 13316) to
-  # catch multi-class homonyms — flags it. In this CLI's grammar it is
-  # unambiguously the imperative the user types to act on a session:
-  #   scitex-ssh attach <session>   — attach to a multiplexed SSH session
-  # (mirrors the established `tmux attach` / `screen -r` pattern; a
-  # rename to `<verb>-attach` / `attach start` would be worse UX).
-  # Declaring it an intransitive verb records that intent and clears §1.
-  - attach
-  # Same §1 escape hatch: Moby classifies `probe` as both noun and verb.
-  # In this CLI it is unambiguously the imperative "check reachability +
-  # capabilities of HOST":
-  #   scitex-ssh probe <host> --requires apptainer
-  # (mirrors `ping`/established network-tooling verb usage; a rename to
-  # `probe-check` or `check-probe` would be worse UX for a one-word verb
-  # everyone already reads as an action, e.g. "probe the target").
-  - probe
+  # ── §1 leaf tokens Moby classifies as BOTH noun and verb ────────────────
+  # The auditor's own message names this file as the remedy for exactly
+  # that case: "Moby classifies this as both noun AND verb; if the verb
+  # meaning is intended in this CLI context, add to
+  # `.scitex/dev/cli-audit-dict.yaml` under `intransitive_verbs:`".
+  #
+  # Both entries below are the VERB sense in this CLI. Neither is a
+  # rename candidate: they are the two oldest operator-facing verbs in
+  # scitex-ssh and both match what an operator already types elsewhere
+  # (`ssh`-adjacent tooling, `tmux attach`, `mtr`/`ping`-style probing).
+
+  - probe    # `scitex-ssh probe <host>` — ACT of reaching a host and
+             # reporting whether it answers. The noun sense ("a probe")
+             # would name a stored object; nothing here is stored. The
+             # suggested `start-probe` implies a daemon that outlives the
+             # command, which is the opposite of what this does — it runs
+             # once and prints a verdict.
+
+  - attach   # `scitex-ssh attach <host> [command]` — ACT of attaching the
+             # caller's terminal to a session on <host>
+             # (`_primitives.py::attach_cmd`). Established by `tmux attach`
+             # / `docker attach`, which operators already know; renaming to
+             # `start-attach` would break that muscle memory for no gain.

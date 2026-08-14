@@ -40,19 +40,42 @@ concurrency:
   # (preserves the retired release-ci.yml coalescing semantic).
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Every call below passes `runs_on` explicitly, and must.
+#
+# The shared workflows in scitex-ai/.github declare
+#   runs_on: default '["self-hosted","Linux","X64","spartan-cpu"]'
+# and all four `spartan-cpu` runners are OFFLINE (measured 2026-08-14). A
+# caller that omits the input therefore queues forever beside four idle
+# `scitex-org-cpu` machines: this repo's CI sat QUEUED for 20 minutes with
+# zero failures, which reads as "still running" rather than "cannot run".
+#
+# Setting the repo's CI_RUNS_ON variable does NOT fix that on its own —
+# these are reusable workflows, and they read their own `inputs.runs_on`,
+# never the caller's `vars`. The variable only reaches them by being passed,
+# which is what the `with:` blocks do. (sac and scitex-dev appear healthy
+# because they run their own job definitions, where `vars.CI_RUNS_ON` is
+# read directly — a different mechanism, not a counter-example.)
 jobs:
   pytest-matrix:
     uses: scitex-ai/.github/.github/workflows/pytest-matrix.yml@main
+    with:
+      runs_on: ${{ vars.CI_RUNS_ON }}
     secrets: inherit
 
   import-smoke:
     uses: scitex-ai/.github/.github/workflows/import-smoke.yml@main
+    with:
+      runs_on: ${{ vars.CI_RUNS_ON }}
     secrets: inherit
 
   quality-audit:
     uses: scitex-ai/.github/.github/workflows/quality-audit.yml@main
+    with:
+      runs_on: ${{ vars.CI_RUNS_ON }}
     secrets: inherit
 
   rtd-sphinx-build:
     uses: scitex-ai/.github/.github/workflows/rtd-sphinx-build.yml@main
+    with:
+      runs_on: ${{ vars.CI_RUNS_ON }}
     secrets: inherit
