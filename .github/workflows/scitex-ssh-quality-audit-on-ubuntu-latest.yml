@@ -40,14 +40,27 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Fetch main ref for --new-only baseline
-        run: git fetch origin main:main
-
       - name: Install package + audit tooling
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
           pip install "scitex-dev[cli-audit]>=0.17.14"
 
+      # NO --new-only AND NO --no-version-check, deliberately.
+      #
+      # --new-only reported only violations newer than a baseline, so every
+      # pre-existing finding was held under it permanently — a green gate on a
+      # tree that never got cleaner. --no-version-check removed the guard that
+      # the auditor is the version this gate was written against, so the gate
+      # could also silently grade itself with the wrong ruler.
+      #
+      # An exemption is a decision someone made and signed. --new-only was a
+      # decision nobody made: nothing recorded WHICH findings it was hiding or
+      # WHY, so the suppressed set drifted with the baseline and no one could
+      # audit the audit. Anything that genuinely must stay is exempted per file,
+      # in the open.
+      #
+      # EXPECT THIS GATE TO GO RED until the pre-existing findings are worked
+      # off. That is the flag's suppression becoming visible, not a new defect.
       - name: Run scitex-dev ecosystem audit-all
-        run: scitex-dev ecosystem audit-all scitex-ssh --new-only --no-version-check
+        run: scitex-dev ecosystem audit-all scitex-ssh
