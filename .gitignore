@@ -54,6 +54,12 @@ docs/sphinx/_build/
 # NOTE: src/<pkg>/_sphinx_html/ is INTENTIONALLY tracked — scitex-cloud
 # serves docs from the in-wheel bundle. CI auto-refreshes via docs.yml.
 # (Do NOT add `src/*/_sphinx_html/` here.)
+#
+# Its .doctrees/ subdirectory is the exception: that is sphinx-build's
+# incremental-build scratch (pickled doctrees plus a downloaded copy of
+# CPython's intersphinx inventory), not part of the served bundle. The CI
+# refresh step copies the whole output dir, which is how it got committed.
+src/*/_sphinx_html/.doctrees/
 
 # Task management
 GITIGNORED/

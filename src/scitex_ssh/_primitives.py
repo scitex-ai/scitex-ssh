@@ -281,7 +281,7 @@ def sync_dir(
         ``host:remote`` → ``local``.
     exclude : sequence of str
         Glob patterns passed as ``--exclude=<pat>`` (e.g. ``index.db``,
-        ``*.db-wal``). Never ship a live sqlite/WAL file — exclude it and
+        ``*.db-wal``). Never ship a live database/WAL file — exclude it and
         rebuild or snapshot it caller-side.
     delete : bool
         Add ``--delete`` (mirror deletions). Off by default: an additive
