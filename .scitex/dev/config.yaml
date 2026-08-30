@@ -4,3 +4,42 @@ audit:
   root-whitelist:
     files:
       - codecov.yml  # codecov.io reads this only from repo root; cannot relocate
+
+  exemptions:
+    PS-231:
+      # This is the rule's OWN documented "BLOCKER 2 — a leaf that also
+      # publishes", verified against both files rather than assumed:
+      #
+      #   * The org reusable (scitex-ai/.github rtd-sphinx-build.yml@main,
+      #     read 2026-08-30) is BUILD-ONLY. Its single step ends at
+      #     `sphinx-build -b html "$CONFDIR" "$CONFDIR/_build/html"`. It
+      #     never copies the build output anywhere and never commits.
+      #   * This leaf workflow's whole reason to exist is the two steps the
+      #     org body has no equivalent of: it refreshes
+      #     `src/scitex_ssh/_sphinx_html/` from the fresh build and commits
+      #     it on a develop push. hatch packages `src/scitex_ssh` wholesale,
+      #     so that bundle SHIPS INSIDE THE WHEEL — replacing this file with
+      #     a bare `uses:` would keep CI green while the documentation
+      #     reaching users froze at whatever was last committed, with
+      #     nothing anywhere saying so.
+      #   * It also runs `sphinx-build -W` on pull requests (warnings are
+      #     errors). The org body builds without `-W`, so the conversion
+      #     would silently drop that PR gate too.
+      #
+      # NOT a way to avoid calling the org workflow: `.github/workflows/ci.yml`
+      # ALREADY calls `scitex-ai/.github/.github/workflows/rtd-sphinx-build.yml@main`
+      # as the `rtd-sphinx-build` job, and that caller publishes the
+      # `rtd-sphinx-build / docs-sphinx` context. The org body runs on every
+      # PR and push here; this file is the additive publish-and-strict-gate
+      # half that the org body cannot provide.
+      - path: .github/workflows/rtd-sphinx-build-on-ubuntu-latest.yml
+        line: 0
+        reason: >-
+          Not a duplicate of the org reusable but a superset of it: this
+          workflow refreshes and commits src/scitex_ssh/_sphinx_html/, which
+          hatch ships inside the wheel, and enforces `sphinx-build -W` on
+          PRs. The org rtd-sphinx-build.yml is build-only (no -W, no vendoring
+          of the built HTML), so a bare `uses:` would freeze the documentation
+          that reaches users and drop the PR warnings-as-errors gate while
+          staying green. The org body is not being skipped: ci.yml already
+          calls it as the `rtd-sphinx-build` job.
