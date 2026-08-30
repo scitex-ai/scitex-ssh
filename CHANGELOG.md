@@ -55,7 +55,7 @@ versions follow [Semantic Versioning](https://semver.org/).
   Policy-free by design — callers own excludes and any post-sync step.
   Exposed as `scitex-ssh sync SRC DEST` (push/pull inferred from which
   side is `HOST:PATH`). Enables cross-machine sync of per-user dirs such
-  as `~/.scitex/scholar/library` without shipping a live sqlite index.
+  as `~/.scitex/scholar/library` without shipping a live database index.
 - `_allowlist`: honour the `$SCITEX_SSH_CONFIG` environment variable as a
   config-path override (resolved per-call via the new `config_path()`),
   matching the precedence chain already advertised in the CLI `--help` and
