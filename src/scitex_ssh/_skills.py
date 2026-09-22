@@ -116,7 +116,7 @@ def skills_get(name: str, as_json: bool) -> None:
     "--dest",
     type=click.Path(),
     default=None,
-    help="Destination dir (default: ~/.scitex/dev/skills/scitex-ssh/).",
+    help="Destination dir (default: this package's folder in the user skills dir).",
 )
 @click.option(
     "--no-link",

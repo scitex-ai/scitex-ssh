@@ -2,9 +2,11 @@
 """MCP server for scitex-ssh.
 
 All tools delegate to the Python API (which delegates to shell scripts).
-"""
 
-from fastmcp import FastMCP
+Requires the optional ``mcp`` extra (``pip install scitex-ssh[mcp]``);
+``fastmcp`` is imported lazily inside :func:`create_server` so that the
+base package stays importable without the extra installed.
+"""
 
 
 def create_server(
@@ -23,6 +25,12 @@ def create_server(
         ``scitex_ssh.remove``. Used by tests to inject hand-rolled
         fakes that observe arguments without mocks.
     """
+    try:
+        from fastmcp import FastMCP
+    except ImportError as exc:
+        raise ImportError(
+            "scitex-ssh MCP support needs fastmcp: pip install scitex-ssh[mcp]"
+        ) from exc
     import scitex_ssh
 
     _setup = setup_fn if setup_fn is not None else scitex_ssh.setup

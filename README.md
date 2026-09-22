@@ -17,6 +17,7 @@
   <a href="https://pypi.org/project/scitex-ssh/"><img src="https://img.shields.io/pypi/v/scitex-ssh?label=pypi" alt="pypi"></a>
   <a href="https://pypi.org/project/scitex-ssh/"><img src="https://img.shields.io/pypi/pyversions/scitex-ssh?label=python" alt="python"></a>
   <a href="https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/rtd-sphinx-build-on-ubuntu-latest.yml"><img src="https://img.shields.io/github/actions/workflow/status/ywatanabe1989/scitex-ssh/rtd-sphinx-build-on-ubuntu-latest.yml?branch=develop&label=docs" alt="docs"></a>
+  <a href="https://scitex-ssh.readthedocs.io/en/latest/"><img src="https://img.shields.io/readthedocs/scitex-ssh?label=docs" alt="Read the Docs"></a>
 </p>
 <p align="center">
   <a href="https://github.com/ywatanabe1989/scitex-ssh/actions/workflows/pytest-matrix-on-ubuntu-py3-11-3-12-3-13.yml"><img src="https://img.shields.io/github/actions/workflow/status/ywatanabe1989/scitex-ssh/pytest-matrix-on-ubuntu-py3-11-3-12-3-13.yml?branch=develop&label=tests" alt="tests"></a>
@@ -32,60 +33,65 @@
 
 | # | Problem | Solution |
 |---|---------|----------|
-| 1 | **Lab machines are behind NAT** -- collaborator can't `ssh lab-box` from the conference | **Persistent reverse tunnel** -- `scitex-ssh setup --port 8888 --bastion gw.example.com` installs an autossh systemd service; survives reboots + flaky networks |
-| 2 | **Manual `autossh` + systemd unit authoring is tedious** -- half the team never bothers | **One-line lifecycle** -- `setup` / `status` / `remove` commands handle the unit file, env vars, restart policy |
+| 1 | Lab machines are **behind NAT** -- collaborator can't `ssh lab-box` from the conference | **Persistent reverse tunnel** -- `scitex-ssh setup --port 8888 --bastion gw.example.com` installs an autossh systemd service; survives reboots + flaky networks |
+| 2 | Manual `autossh` + systemd unit authoring is **tedious** -- half the team never bothers | **One-line lifecycle** -- `setup` / `status` / `remove` commands handle the unit file, env vars, restart policy |
 
-## Architecture
+## Demo
 
-```
-┌─────────────────────────────────────────┐     ┌──────────────────────┐     ┌──────────────────┐
-│  Lab Workstation (behind NAT/firewall)  │     │   Bastion Server     │     │  Remote Client   │
-│                                         │     │   (public IP)        │     │  (laptop, etc.)  │
-│  ┌──────────────────────────────────┐   │     │                      │     │                  │
-│  │ systemd service                  │   │     │                      │     │                  │
-│  │ autossh-tunnel-{port}.service    │   │     │                      │     │                  │
-│  │   ┌──────────────────────────┐   │   │     │  ┌────────────────┐  │     │                  │
-│  │   │ autossh                  │   │   │     │  │ sshd listening │  │     │                  │
-│  │   │ (auto-reconnect daemon)  │───┼───┼─────┼──│ on port {port} │──┼─────│  ssh -p {port}   │
-│  │   │                          │   │   │     │  │                │  │     │  bastion-server  │
-│  │   └──────────────────────────┘   │   │     │  └────────────────┘  │     │                  │
-│  └──────────────────────────────────┘   │     │                      │     │                  │
-│                                         │     │                      │     │                  │
-│  localhost:22 (SSH server)              │     │                      │     │                  │
-└─────────────────────────────────────────┘     └──────────────────────┘     └──────────────────┘
-          ────── reverse tunnel ──────►               ◄─── SSH connection ───
-     -R {port}:localhost:22 bastion-server         ssh -p {port} bastion-server
+End-to-end flow — from a one-line `setup` to a remote `ssh` reaching the lab box behind NAT:
+
+```mermaid
+sequenceDiagram
+    participant Lab as Lab Workstation<br/>(behind NAT)
+    participant Sys as systemd + autossh
+    participant Bas as Bastion Server<br/>(public IP)
+    participant Cli as Remote Client
+
+    Lab->>Sys: scitex-ssh setup -p 2222 -b user@bastion -s ~/.ssh/id_rsa
+    Sys->>Sys: write autossh-tunnel-2222.service
+    Sys->>Bas: autossh -R 2222:localhost:22 (reverse tunnel)
+    Note over Sys,Bas: Tunnel persistent — survives reboots & flaky links
+    Cli->>Bas: ssh -p 2222 user@bastion
+    Bas->>Lab: forward via reverse tunnel
+    Lab-->>Cli: SSH session established
 ```
 
-<p align="center"><sub><b>Figure 1.</b> Architecture overview. The lab workstation initiates a reverse SSH tunnel to the bastion server. The remote client connects to the bastion server, which forwards the connection back through the tunnel to the lab workstation.</sub></p>
+<p align="center"><sub><b>Figure 2.</b> Demo flow. One <code>setup</code> call installs a persistent autossh systemd unit; remote clients then reach the NAT-bound lab workstation via <code>ssh -p 2222 bastion</code>.</sub></p>
 
-<details>
-<summary><strong>How It Works</strong></summary>
+```bash
+# On the lab workstation (one-time, requires sudo):
+$ scitex-ssh setup -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
+[ok] systemd unit autossh-tunnel-2222.service installed and started
 
-<br>
+$ scitex-ssh status -p 2222
+autossh-tunnel-2222.service — active (running)
 
-1. **`setup`** (requires **sudo**) writes a systemd unit file at `/etc/systemd/system/autossh-tunnel-{port}.service` that runs autossh with the reverse tunnel flag (`-R {port}:localhost:22`). The service is enabled (starts on boot) and started immediately.
-2. **autossh** monitors the SSH connection and automatically re-establishes it if the connection drops — network interruptions, server reboots, or SSH timeouts are handled transparently.
-3. **systemd** ensures the service survives host reboots (`WantedBy=multi-user.target`) and restarts on process failure (`Restart=always`, `RestartSec=3`).
-4. A remote client connects to the bastion server on the forwarded port, and the connection is routed back through the tunnel to the lab workstation's SSH server (port 22).
-
-| Operation | What it does |
-|-----------|-------------|
-| **setup** | Creates a systemd service at `/etc/systemd/system/autossh-tunnel-{port}.service` that maintains a reverse SSH tunnel via autossh |
-| **status** | Queries systemd for tunnel service state (`systemctl status`) |
-| **remove** | Stops, disables, and deletes the systemd service file |
-
-<p align="center"><sub><b>Table 1.</b> Three operations. Each maps to a CLI (Command-Line Interface) command, Python function, and MCP (Model Context Protocol) tool.</sub></p>
-
-</details>
+# From any remote client:
+$ ssh -p 2222 user@bastion.example.com
+# → reaches the lab workstation through the reverse tunnel
+```
 
 ## Installation
 
+```bash
+uv pip install "scitex-ssh[all]"
+```
+
 Requires `autossh` on the host machine (`sudo apt install autossh`).
 
-```bash
-pip install scitex-ssh
-```
+<details>
+<summary><strong>Extras matrix</strong></summary>
+
+<br>
+
+| Extra | Install | Adds |
+|-------|---------|------|
+| `all` | `uv pip install "scitex-ssh[all]"` | Everything below (MCP server support) |
+| `mcp` | `uv pip install "scitex-ssh[mcp]"` | MCP server (`scitex-ssh mcp start`, `tunnel_setup` / `tunnel_status` / `tunnel_remove` tools) |
+| `dev` | `uv pip install "scitex-ssh[dev]"` | Test + audit toolchain (pytest, scitex-dev) |
+| `docs` | `uv pip install "scitex-ssh[docs]"` | Sphinx docs build (Read the Docs) |
+
+</details>
 
 ### Configuration
 
@@ -206,6 +212,37 @@ remove-autossh-service.sh -p 2222
 
 </details>
 
+## Architecture
+
+```mermaid
+flowchart LR
+    Lab["Lab Workstation<br/>(behind NAT/firewall)<br/>localhost:22 (SSH server)"] -->|"-R {port}:localhost:22<br/>bastion-server"| Bas["Bastion Server<br/>(public IP)<br/>sshd listening on port {port}"]
+    Cli["Remote Client<br/>(laptop, etc.)"] -->|"ssh -p {port}<br/>bastion-server"| Bas
+    Bas -.->|"forward via reverse tunnel"| Lab
+```
+
+<p align="center"><sub><b>Figure 1.</b> Architecture overview. The lab workstation initiates a reverse SSH tunnel to the bastion server. The remote client connects to the bastion server, which forwards the connection back through the tunnel to the lab workstation.</sub></p>
+
+<details>
+<summary><strong>How It Works</strong></summary>
+
+<br>
+
+1. **`setup`** (requires **sudo**) writes a systemd unit file at `/etc/systemd/system/autossh-tunnel-{port}.service` that runs autossh with the reverse tunnel flag (`-R {port}:localhost:22`). The service is enabled (starts on boot) and started immediately.
+2. **autossh** monitors the SSH connection and automatically re-establishes it if the connection drops — network interruptions, server reboots, or SSH timeouts are handled transparently.
+3. **systemd** ensures the service survives host reboots (`WantedBy=multi-user.target`) and restarts on process failure (`Restart=always`, `RestartSec=3`).
+4. A remote client connects to the bastion server on the forwarded port, and the connection is routed back through the tunnel to the lab workstation's SSH server (port 22).
+
+| Operation | What it does |
+|-----------|-------------|
+| **setup** | Creates a systemd service at `/etc/systemd/system/autossh-tunnel-{port}.service` that maintains a reverse SSH tunnel via autossh |
+| **status** | Queries systemd for tunnel service state (`systemctl status`) |
+| **remove** | Stops, disables, and deletes the systemd service file |
+
+<p align="center"><sub><b>Table 1.</b> Three operations. Each maps to a CLI (Command-Line Interface) command, Python function, and MCP (Model Context Protocol) tool.</sub></p>
+
+</details>
+
 ## Four Interfaces
 
 <details>
@@ -304,41 +341,6 @@ scitex-ssh skills get quick-start
 > **[Full skills directory](https://github.com/ywatanabe1989/scitex-ssh/tree/develop/src/scitex_ssh/_skills/scitex-ssh)**
 
 </details>
-
-## Demo
-
-End-to-end flow — from a one-line `setup` to a remote `ssh` reaching the lab box behind NAT:
-
-```mermaid
-sequenceDiagram
-    participant Lab as Lab Workstation<br/>(behind NAT)
-    participant Sys as systemd + autossh
-    participant Bas as Bastion Server<br/>(public IP)
-    participant Cli as Remote Client
-
-    Lab->>Sys: scitex-ssh setup -p 2222 -b user@bastion -s ~/.ssh/id_rsa
-    Sys->>Sys: write autossh-tunnel-2222.service
-    Sys->>Bas: autossh -R 2222:localhost:22 (reverse tunnel)
-    Note over Sys,Bas: Tunnel persistent — survives reboots & flaky links
-    Cli->>Bas: ssh -p 2222 user@bastion
-    Bas->>Lab: forward via reverse tunnel
-    Lab-->>Cli: SSH session established
-```
-
-<p align="center"><sub><b>Figure 2.</b> Demo flow. One <code>setup</code> call installs a persistent autossh systemd unit; remote clients then reach the NAT-bound lab workstation via <code>ssh -p 2222 bastion</code>.</sub></p>
-
-```bash
-# On the lab workstation (one-time, requires sudo):
-$ scitex-ssh setup -p 2222 -b user@bastion.example.com -s ~/.ssh/id_rsa
-[ok] systemd unit autossh-tunnel-2222.service installed and started
-
-$ scitex-ssh status -p 2222
-autossh-tunnel-2222.service — active (running)
-
-# From any remote client:
-$ ssh -p 2222 user@bastion.example.com
-# → reaches the lab workstation through the reverse tunnel
-```
 
 ## Part of SciTeX
 
