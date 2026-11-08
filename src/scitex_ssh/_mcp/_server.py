@@ -4,9 +4,6 @@
 All tools delegate to the Python API (which delegates to shell scripts).
 """
 
-from fastmcp import FastMCP
-
-
 def create_server(
     *,
     setup_fn=None,
@@ -23,6 +20,15 @@ def create_server(
         ``scitex_ssh.remove``. Used by tests to inject hand-rolled
         fakes that observe arguments without mocks.
     """
+    try:
+        from fastmcp import FastMCP
+    except ModuleNotFoundError as error:
+        if error.name != "fastmcp":
+            raise
+        raise ImportError(
+            "MCP support requires fastmcp. Install with: pip install 'scitex-ssh[mcp]'"
+        ) from error
+
     import scitex_ssh
 
     _setup = setup_fn if setup_fn is not None else scitex_ssh.setup

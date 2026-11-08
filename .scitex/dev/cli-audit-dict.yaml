@@ -9,6 +9,10 @@
 #   transitive_verbs:   [...]
 #   intransitive_verbs: [...]
 
+nouns:
+  # SSH names the Secure Shell protocol namespace, not an imperative command.
+  - ssh
+
 intransitive_verbs:
   # audit-cli §1 escape hatch (the same mechanism `next` uses, and that
   # scitex-todo uses for watch/close/comment): Moby's POS corpus

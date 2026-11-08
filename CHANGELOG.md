@@ -7,6 +7,13 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Ship the canonical CLI vocabulary in the installed namespace and retain its
+  source file for sdist rebuilds. Declare SSH as the protocol namespace noun;
+  preserve the existing `attach` and `probe` verb declarations.
+- Verify the vocabulary bytes through a real sdist-to-wheel build in tests.
+- Load the optional FastMCP dependency when creating the MCP server and give
+  installation guidance when it is absent. Keep adapter imports usable without it.
+
 ## [1.2.0] - 2026-07-12
 
 ### Added
