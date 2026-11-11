@@ -1,7 +1,7 @@
 ---
 description: |
   [TOPIC] scitex-ssh CLI Reference
-  [DETAILS] Top-level subcommands of `scitex-ssh` — exec, copy, attach, tunnel (setup/status/remove), mcp, list-python-apis.
+  [DETAILS] Top-level subcommands of `scitex-ssh` — exec, copy, sync, probe, attach, tunnel (setup/check-status/remove), mcp, list-python-apis.
 tags: [scitex-ssh-cli-reference]
 ---
 
@@ -22,11 +22,9 @@ scitex-ssh [OPTIONS] COMMAND [ARGS]...
 | `--json`             | Emit structured JSON output                          |
 | `-h / --help`        | Show help                                            |
 
-Config precedence (SciTeX chain):
-
-```
-config.yaml → $SCITEX_SSH_CONFIG → ~/.scitex/ssh/config.yaml → defaults
-```
+Tunnel policy uses `$SCITEX_SSH_CONFIG` when set; otherwise it reads
+`~/.scitex/ssh/config.yaml`. A missing policy denies tunnel setup and removal.
+The CLI does not automatically read `config.yaml` from the working directory.
 
 ## SSH primitives
 
@@ -34,10 +32,12 @@ config.yaml → $SCITEX_SSH_CONFIG → ~/.scitex/ssh/config.yaml → defaults
 |----------|------------------------------------------------------|
 | `exec`   | Run a command on HOST via ssh                        |
 | `copy`   | Copy files between local and `HOST:PATH`             |
+| `sync`   | Synchronize a directory with rsync over SSH          |
+| `probe`  | Check reachability and required remote executables   |
 | `attach` | Open an interactive `ssh -t` session to HOST         |
 
 ```bash
-scitex-ssh exec user@host -- uname -a
+scitex-ssh exec user@host "uname -a"
 scitex-ssh copy ./local.txt user@host:/tmp/
 scitex-ssh attach user@host
 ```
@@ -57,8 +57,8 @@ but deprecated.
 ```bash
 scitex-ssh tunnel setup --port 22 --bastion jump.example.com \
     --secret-key ~/.ssh/id_rsa
-scitex-ssh tunnel status
-scitex-ssh tunnel status --port 22
+scitex-ssh tunnel check-status
+scitex-ssh tunnel check-status --port 22
 scitex-ssh tunnel remove --port 22
 ```
 
@@ -71,14 +71,21 @@ scitex-ssh tunnel remove --port 22
 
 ## Allowlist gating
 
-All commands consult `~/.scitex/ssh/allowed_hosts.yaml`. Unlisted hosts
-fail fast with a `PolicyError`. See `03_python-api.md` for the YAML
-shape.
+Persistent tunnel setup and removal consult the policy file above. A host
+without an explicit entry inherits `default.tunnels`; without an applicable
+allow rule, these operations fail with `PolicyError`. Informational
+`check-status` and the SSH primitives do not use this allowlist. The SSH
+transport still uses the caller’s SSH authentication and configuration.
+
+The owning implementations are `_allowlist.config_path`, `_allowlist.is_allowed`,
+and `_cli._tunnel.tunnel_status`. Behavioral controls are in
+`tests/scitex_ssh/test__allowlist.py`, `tests/scitex_ssh/_cli/test__main.py`,
+and `tests/scitex_ssh/_cli/test__primitives.py`.
 
 ## Examples
 
 ```bash
-scitex-ssh --json tunnel check-status         # machine-readable
+scitex-ssh tunnel check-status --json         # machine-readable
 scitex-ssh --help-recursive | head -60        # full surface dump
 ```
 
