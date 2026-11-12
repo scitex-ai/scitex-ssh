@@ -117,6 +117,146 @@ def copy_cmd(src, dest, recursive, ssh_opts, dry_run, yes):
     raise SystemExit(result.returncode)
 
 
+@click.command("sync")
+@click.argument("src")
+@click.argument("dest")
+@click.option(
+    "--exclude",
+    "exclude",
+    multiple=True,
+    help="Glob to exclude (repeatable), e.g. --exclude index.db --exclude '*.db-wal'.",
+)
+@click.option("--delete", is_flag=True, help="Mirror deletions (rsync --delete).")
+@click.option(
+    "--extra-opts",
+    default=None,
+    help='Extra rsync flags as one shell-quoted string (e.g. "--checksum --mkpath").',
+)
+@click.option(
+    "--ssh-opts",
+    default=None,
+    help="Extra ssh flags as a single shell-quoted string (wired via rsync -e).",
+)
+@click.option("--dry-run", is_flag=True, help="Print plan without running rsync.")
+@click.option(
+    "-y", "--yes", is_flag=True, help="Suppress interactive confirmation (assume yes)."
+)
+def sync_cmd(src, dest, exclude, delete, extra_opts, ssh_opts, dry_run, yes):
+    """Rsync a directory one-way between local and a remote HOST:PATH.
+
+    \b
+    Example:
+      $ scitex-ssh sync ~/.scitex/scholar/library/ spartan:~/.scitex/scholar/library/ \\
+          --exclude index.db --exclude '*.db-wal' --exclude '*.db-shm'
+      $ scitex-ssh sync spartan:~/data/ ./data/ --delete
+    """
+    src_host, src_path = _split_host_path(src)
+    dest_host, dest_path = _split_host_path(dest)
+
+    if src_host and dest_host:
+        click.secho(
+            "ERROR: remote-to-remote sync is not supported.", fg="red", err=True
+        )
+        raise SystemExit(2)
+    if not src_host and not dest_host:
+        click.secho(
+            "ERROR: exactly one of SRC or DEST must be HOST:PATH.", fg="red", err=True
+        )
+        raise SystemExit(2)
+
+    if dest_host:
+        direction, host, local, remote = "push", dest_host, src_path, dest_path
+    else:
+        direction, host, local, remote = "pull", src_host, dest_path, src_path
+
+    if dry_run:
+        click.echo(
+            f"DRY RUN — would rsync ({direction}) {src} -> {dest} "
+            f"(exclude={list(exclude)}, delete={delete})"
+        )
+        return
+
+    from scitex_ssh import sync_dir
+
+    result = sync_dir(
+        host,
+        local,
+        remote,
+        direction=direction,
+        exclude=exclude,
+        delete=delete,
+        extra_opts=_split_opts(extra_opts),
+        ssh_opts=_split_opts(ssh_opts),
+    )
+    if result.stdout:
+        click.echo(result.stdout, nl=False)
+    if result.stderr:
+        click.echo(result.stderr, err=True, nl=False)
+    raise SystemExit(result.returncode)
+
+
+@click.command("probe")
+@click.argument("host")
+@click.option(
+    "--requires",
+    "requires",
+    multiple=True,
+    help="Executable to check for via `command -v` on the remote (repeatable), e.g. --requires apptainer.",
+)
+@click.option(
+    "--ssh-opts",
+    default=None,
+    help="Extra ssh flags as a single shell-quoted string.",
+)
+@click.option("--timeout", type=float, default=None, help="Timeout in seconds.")
+@click.option("--json", "as_json", is_flag=True, help="Emit structured JSON output.")
+def probe_cmd(host, requires, ssh_opts, timeout, as_json):
+    """Check HOST is reachable and (optionally) which executables it has.
+
+    Exits 0 if reachable and every --requires capability is present, 1 if
+    reachable but missing a capability, 2 if HOST is unreachable.
+
+    \b
+    Example:
+      $ scitex-ssh probe spartan --requires apptainer --requires rsync
+      $ scitex-ssh probe spartan --json
+    """
+    from scitex_ssh import probe_remote
+
+    result = probe_remote(
+        host, requires=requires, ssh_opts=_split_opts(ssh_opts), timeout=timeout
+    )
+
+    if as_json:
+        import json as _json
+
+        click.echo(
+            _json.dumps(
+                {
+                    "host": host,
+                    "reachable": result.reachable,
+                    "capabilities": result.capabilities,
+                    "ok": result.ok,
+                },
+                indent=2,
+            )
+        )
+    else:
+        if not result.reachable:
+            click.secho(f"UNREACHABLE: {host}", fg="red", err=True)
+        else:
+            click.secho(f"REACHABLE: {host}", fg="green")
+            for name, present in result.capabilities.items():
+                colour = "green" if present else "red"
+                click.secho(
+                    f"  {name}: {'present' if present else 'MISSING'}", fg=colour
+                )
+
+    if not result.reachable:
+        raise SystemExit(2)
+    raise SystemExit(0 if result.ok else 1)
+
+
 @click.command("attach")
 @click.argument("host")
 @click.option("--command", "-c", default=None, help="Command to run after attaching.")

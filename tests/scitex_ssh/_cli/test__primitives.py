@@ -9,6 +9,7 @@ No mocks. Pure helpers are tested directly; exec/copy invoke the real
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -21,6 +22,8 @@ from scitex_ssh._cli._primitives import (
     attach_cmd,
     copy_cmd,
     exec_cmd,
+    probe_cmd,
+    sync_cmd,
 )
 
 
@@ -232,8 +235,171 @@ class TestCopyCmd:
         runner = CliRunner()
         # Act
         runner.invoke(copy_cmd, ["myhost:/etc/hostname", "./hostname"])
+        # Assert — src/dest are always the last two argv elements, robust
+        # to the safe-transport-defaults prefix scitex_ssh adds by default.
+        assert subprocess_shim.argv("scp")[-2:] == ["myhost:/etc/hostname", "./hostname"]
+
+
+class TestSyncCmd:
+    def test_dry_run_exits_zero(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(
+            sync_cmd, ["./lib/", "spartan:~/lib/", "--dry-run"]
+        )
         # Assert
-        assert subprocess_shim.argv("scp") == ["myhost:/etc/hostname", "./hostname"]
+        assert result.exit_code == 0
+
+    def test_dry_run_announces_push_direction(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(
+            sync_cmd, ["./lib/", "spartan:~/lib/", "--dry-run"]
+        )
+        # Assert
+        assert "push" in result.output
+
+    def test_local_to_local_sync_exits_two(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(sync_cmd, ["./a/", "./b/"])
+        # Assert
+        assert result.exit_code == 2
+
+    def test_remote_to_remote_sync_reports_unsupported(self):
+        # Arrange
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(sync_cmd, ["h1:/a/", "h2:/b/"])
+        # Assert
+        assert "remote-to-remote" in result.output
+
+    def test_push_invokes_rsync_once(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("rsync", rc=0)
+        runner = CliRunner()
+        # Act
+        runner.invoke(sync_cmd, ["./lib/", "spartan:~/lib/"])
+        # Assert
+        assert subprocess_shim.call_count("rsync") == 1
+
+    def test_push_builds_remote_dest_argv(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("rsync", rc=0)
+        runner = CliRunner()
+        # Act
+        runner.invoke(sync_cmd, ["./lib/", "spartan:~/lib/"])
+        # Assert
+        argv = subprocess_shim.argv("rsync")
+        assert argv[-2:] == ["./lib/", "spartan:~/lib/"]
+
+    def test_exclude_options_reach_rsync(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("rsync", rc=0)
+        runner = CliRunner()
+        # Act
+        runner.invoke(
+            sync_cmd,
+            ["./lib/", "spartan:~/lib/", "--exclude", "index.db", "--exclude", "*.db-wal"],
+        )
+        # Assert
+        argv = subprocess_shim.argv("rsync")
+        assert "--exclude=index.db" in argv and "--exclude=*.db-wal" in argv
+
+    def test_propagates_nonzero_returncode(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("rsync", rc=23, stderr="partial\n")
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(sync_cmd, ["./lib/", "spartan:~/lib/"])
+        # Assert
+        assert result.exit_code == 23
+
+
+class TestProbeCmd:
+    def test_reachable_no_requirements_exits_zero(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install(
+            "ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\n"
+        )
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(probe_cmd, ["spartan"])
+        # Assert
+        assert result.exit_code == 0
+
+    def test_unreachable_exits_two(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("ssh", rc=255, stderr="Connection refused")
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(probe_cmd, ["deadhost"])
+        # Assert
+        assert result.exit_code == 2
+
+    def test_unreachable_reports_host_on_stderr(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install("ssh", rc=255, stderr="Connection refused")
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(probe_cmd, ["deadhost"])
+        # Assert
+        assert "deadhost" in result.output
+
+    def test_missing_capability_exits_one(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install(
+            "ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\nno\n"
+        )
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(probe_cmd, ["spartan", "--requires", "apptainer"])
+        # Assert
+        assert result.exit_code == 1
+
+    def test_present_capability_reported_in_output(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install(
+            "ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\nyes\n"
+        )
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(probe_cmd, ["spartan", "--requires", "apptainer"])
+        # Assert
+        assert "apptainer" in result.output and "present" in result.output
+
+    def test_json_output_is_valid_json_with_expected_keys(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install(
+            "ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\nyes\n"
+        )
+        runner = CliRunner()
+        # Act
+        result = runner.invoke(
+            probe_cmd, ["spartan", "--requires", "apptainer", "--json"]
+        )
+        # Assert
+        payload = json.loads(result.output)
+        assert payload == {
+            "host": "spartan",
+            "reachable": True,
+            "capabilities": {"apptainer": True},
+            "ok": True,
+        }
+
+    def test_requires_option_reaches_ssh_argv(self, subprocess_shim):
+        # Arrange
+        subprocess_shim.install(
+            "ssh", rc=0, stdout="__SCITEX_SSH_PROBE_REACHABLE__\nno\n"
+        )
+        runner = CliRunner()
+        # Act
+        runner.invoke(probe_cmd, ["spartan", "--requires", "apptainer"])
+        # Assert
+        assert "apptainer" in subprocess_shim.argv("ssh")[-1]
 
 
 def _run_attach(host, *, bin_dir):

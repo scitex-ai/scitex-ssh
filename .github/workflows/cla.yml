@@ -1,7 +1,7 @@
 name: CLA Assistant
 
-# The previous inline action still targeted the deleted cla-signatures branch.
-# Use the accepted shared consent workflow and organization signature ledger.
+# Replace the per-repository ledger caller with the accepted shared consent
+# dispatcher and organization signature ledger.
 # Keep the existing triggers, token permissions, and owner allowlist unchanged.
 # Pin code because these events can be triggered by untrusted contributors.
 on:

@@ -19,7 +19,14 @@ write-autossh-service() {
         [Service]
         User=$USER
         Environment="AUTOSSH_GATETIME=0"
-        ExecStart=/usr/bin/autossh -M 0 -N -o "PubkeyAuthentication=yes" -o "PasswordAuthentication=no" -i $SECRET_KEY_PATH -R ${PORT}:localhost:22 $BASTION_SERVER
+        # ServerAlive* : with -M 0 (autossh monitor off) ssh's own keepalive is
+        #   the ONLY way to notice a half-dead link; without it a broken tunnel
+        #   lingers and autossh never restarts.
+        # ExitOnForwardFailure=yes : if the remote -R port is still bound by a
+        #   stale session on reconnect, exit (so autossh retries) instead of
+        #   sitting connected with a DEAD forward — the classic "reverse tunnel
+        #   up but forwarded port closes immediately" failure.
+        ExecStart=/usr/bin/autossh -M 0 -N -o "PubkeyAuthentication=yes" -o "PasswordAuthentication=no" -o "ServerAliveInterval=15" -o "ServerAliveCountMax=3" -o "ExitOnForwardFailure=yes" -i $SECRET_KEY_PATH -R ${PORT}:localhost:22 $BASTION_SERVER
         RestartSec=3
         Restart=always
 
