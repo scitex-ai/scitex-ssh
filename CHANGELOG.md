@@ -9,6 +9,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [1.2.1] - 2026-11-12
 
+- Run release tests through the shared full native matrix. Verify the CI image
+  digest, use runner-owned scratch on HPC and local hosts, and bind publication
+  to the tested source commit. Remove reduced-dependency release fallbacks.
+
 - Use the shared CLA dispatcher with the existing contributor allowlist. Remove
   legacy automatic merge triggers and require reviewed ordinary merges.
 
