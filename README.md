@@ -340,6 +340,12 @@ $ ssh -p 2222 user@bastion.example.com
 # → reaches the lab workstation through the reverse tunnel
 ```
 
+## CLI vocabulary maintenance
+
+Edit `.scitex/dev/cli-audit-dict.yaml` to maintain this package's CLI vocabulary.
+The build ships those same bytes as `scitex_ssh/_cli_audit_dict.yaml` and keeps
+the canonical source file in the sdist. Artifact tests verify the rebuild.
+
 ## Part of SciTeX
 
 `scitex-ssh` is part of [**SciTeX**](https://scitex.ai). Install via

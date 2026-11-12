@@ -1,8 +1,8 @@
 ---
 name: scitex-ssh
 description: |
-  [WHAT] Persistent, auto-reconnecting SSH reverse tunnels for NAT traversal — installs an `autossh` systemd unit on the local host so a bastion/relay server can SSH back in even through firewalls and dynamic IPs.
-  [WHEN] Use whenever the user asks to "set up a reverse SSH tunnel", "keep SSH alive through NAT", "access a lab machine from outside", "tunnel through a bastion", "autossh systemd service", "check tunnel status", "remove a tunnel", "expose this machine via a jump host", or mentions bastion server, NAT traversal, autossh, reverse SSH, HPC login node.
+  [WHAT] SSH command execution, file copy and synchronization, remote capability checks, interactive sessions, and tunnel management. Persistent reverse tunnels use autossh and systemd with a per-host policy.
+  [WHEN] Use for remote commands, file transfers, rsync synchronization, capability checks, or interactive SSH sessions; also use when the user asks to "set up a reverse SSH tunnel", "keep SSH alive through NAT", "access a lab machine from outside", "tunnel through a bastion", "autossh systemd service", "check tunnel status", "remove a tunnel", "expose this machine via a jump host", or mentions bastion server, NAT traversal, autossh, reverse SSH, HPC login node.
   [HOW] `pip install scitex-ssh` then `import scitex_ssh`; see leaf skills for details.
 tags: [scitex-ssh]
 allowed-tools: mcp__scitex__tunnel_*
@@ -15,7 +15,7 @@ interfaces:
   http: 0
 ---
 
-# SSH Tunnels with scitex-ssh
+# SSH operations with scitex-ssh
 
 > **Interfaces:** Python ⭐ · CLI ⭐⭐⭐ (primary) · MCP ⭐⭐ · Skills ⭐⭐ · Hook — · HTTP —
 
