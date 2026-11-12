@@ -7,6 +7,8 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-12
+
 - Ship the canonical CLI vocabulary in the installed namespace and retain its
   source file for sdist rebuilds. Declare SSH as the protocol namespace noun;
   preserve the existing `attach` and `probe` verb declarations.
