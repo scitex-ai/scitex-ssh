@@ -115,8 +115,9 @@ def main(ctx, version, help_recursive, as_json):
     """scitex-ssh - SSH primitives (exec/copy/attach) and gated reverse tunnels.
 
     \b
-    Config is loaded with the SciTeX precedence chain:
-      config.yaml -> $SCITEX_SSH_CONFIG -> ~/.scitex/ssh/config.yaml -> defaults
+    Tunnel policy: $SCITEX_SSH_CONFIG, otherwise ~/.scitex/ssh/config.yaml.
+    Missing policy denies persistent tunnel setup/removal; SSH primitives
+    and informational tunnel check-status do not use this allowlist.
     """
     ctx.ensure_object(dict)
     ctx.obj["as_json"] = as_json
