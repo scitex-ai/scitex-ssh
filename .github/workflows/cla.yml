@@ -1,13 +1,9 @@
 name: CLA Assistant
 
-# PILOT: org-level reusable-workflow caller (scitex-ai/.github, 2026-07-10).
-# Triggers/permissions preserved verbatim from the prior local file.
-# Reusable workflow defaults (owner_login=ywatanabe1989,
-# owner_allowlist="bot*,ywatanabe1989", default_branch=main) already match
-# this repo's prior hardcoded values, so no `with:` overrides are needed.
-# This repo's `GH_PERSONAL_ACCESS_TOKEN` secret already matches the name
-# the reusable workflow expects.
-
+# Replace the per-repository ledger caller with the accepted shared consent
+# dispatcher and organization signature ledger.
+# Keep the existing triggers, token permissions, and owner allowlist unchanged.
+# Pin code because these events can be triggered by untrusted contributors.
 on:
   issue_comment:
     types: [created]
@@ -21,17 +17,10 @@ permissions:
   statuses: write
 
 jobs:
-  call:
-    uses: scitex-ai/.github/.github/workflows/cla.yml@main
-    # NAMED SECRET, not `secrets: inherit`. This caller fires on
-    # `issue_comment` and `pull_request_target`, both of which an
-    # UNAUTHENTICATED outsider can trigger on a public repo, so `inherit`
-    # would forward EVERY secret this repository holds into a job a stranger
-    # caused to run -- on the shared, persistent self-hosted runner the
-    # callee may target. Neither file reveals that alone: the caller names no
-    # `runs-on`, so the destination lives in the callee. Pass ONLY the one
-    # secret the callee declares (`GH_PERSONAL_ACCESS_TOKEN`, required).
-    # Audit rule PS-224 flags the `inherit` form; `inherit` is not a
-    # convenience here, it is the vulnerability.
+  CLAssistant:
+    uses: scitex-ai/.github/.github/workflows/cla.yml@49ecabbd7e6876f1712f43c1f6b901aa77f4b1ae
+    with:
+      owner_allowlist: "bot*,ywatanabe1989"
+    # Forward only the secret declared by the reusable workflow.
     secrets:
       GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
